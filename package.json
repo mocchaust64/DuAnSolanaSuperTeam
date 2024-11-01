@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/next": "^9.0.0"
+  },
+  "dependencies": {
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/web3.js": "^1.95.4"
+  }
+}
