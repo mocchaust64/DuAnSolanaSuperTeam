@@ -1,6 +1,6 @@
 import create,{State} from "zustand";
 import { Connection,PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { error } from "console";
+// import { error } from "console";
 
 interface UserSOLBalanceStore extends State{
   balance : number;

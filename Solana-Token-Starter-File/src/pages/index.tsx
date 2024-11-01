@@ -4,8 +4,17 @@ import Head from "next/head";
 
 //IMPORT INTERNAL
 
-import{HomeView, ToolView, Featureview, OfferView,FaqView,CreateView, TokenMetadata,contactView, AirdropView,DonateView}
+import{HomeView,
+   ToolView,
+    Featureview,
+     OfferView,
+     FaqView,CreateView,
+      TokenMetadata,
+      ContactView,
+       AirdropView,
+       DonateView}
 from "../views"
+
 
 const Home: NextPage = (props) => {
 //STATE VARIABLE
@@ -63,19 +72,21 @@ return(
 
   </div>
 )}
-{  /*
+
 {openContact && (
   <div className="new_loader relative h-full bg-slate-900">
-    <CreateView setOpenContact = {setOpenContact}/>
+    <ContactView setOpenContact = {setOpenContact}/>
 
   </div>
 )}
+
 {openAirdrop && (
   <div className="new_loader relative h-full bg-slate-900">
     <AirdropView setOpenAirdrop = {setOpenAirdrop}/>
 
   </div>
 )}
+{  /*
 {openSendTransaction && (
   <div className="new_loader relative h-full bg-slate-900">
     <DonateView setOpenSendTransaction = {setOpenSendTransaction}/>

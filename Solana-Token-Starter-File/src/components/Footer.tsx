@@ -3,7 +3,7 @@ import { useForm } from "@formspree/react";
 import { TiSocialFacebook, TiSocialLinkedin, TiSocialTwitter, TiSocialYoutube } from "react-icons/ti";
 
 export const Footer: FC = () => {
-  const [state, handleSubmit] = useForm("mzbnzpqr");
+  const [state, handleSubmit] = useForm("xqakpljw");
 
   if (state.succeeded) {
     return (
