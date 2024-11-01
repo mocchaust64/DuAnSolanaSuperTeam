@@ -57,6 +57,8 @@ export const AirdropView:FC = ({setOpenAirdrop}) => {
         description: error?.message,
         txid: signature,
       });
+      console.log("error", `airdrop failed ${error.message}`, signature);
+      
     }
 
 

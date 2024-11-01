@@ -12,11 +12,12 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
   const [state, handleSubmit] = useForm("xqakpljw");
 
   const onSubmitSuccess = () => {
+    setTimeout(() => setOpenContact(false), 2000); // Đóng modal sau 2 giây
     notify({
       type: "success",
       message: "Thanks for submitting your message, we will get back to you",
     });
-    setTimeout(() => setOpenContact(false), 2000); // Đóng modal sau 2 giây
+    
   };
 
   const CloseModal = () => (
