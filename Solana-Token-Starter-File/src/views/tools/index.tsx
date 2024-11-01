@@ -2,9 +2,16 @@ import React, { FC } from "react";
 import { MdGeneratingTokens } from "react-icons/md";
 import { IoIosArrowRoundForward } from "react-icons/io";
 import { LuArrowRightFromLine } from "react-icons/lu";
-import index from "views/feature";
 
-export const ToolView: FC = ({
+interface ToolViewProps {
+  setOpenAirdrop: (value: boolean) => void;
+  setOpenContact: (value: boolean) => void;
+  setOpenCreateModal: (value: boolean) => void;
+  setOpenSendTransaction: (value: boolean) => void;
+  setOpenTokenMetaData: (value: boolean) => void;
+}
+
+export const ToolView: FC<ToolViewProps> = ({
   setOpenAirdrop,
   setOpenContact,
   setOpenCreateModal,
@@ -20,12 +27,12 @@ export const ToolView: FC = ({
     {
       name: "Token Metadata",
       icon: <MdGeneratingTokens />,
-      function: setOpenContact,
+      function: setOpenTokenMetaData,
     },
     {
       name: "Contact Us",
       icon: <MdGeneratingTokens />,
-      function: setOpenCreateModal,
+      function: setOpenContact,
     },
     {
       name: "Airdrop",
@@ -62,7 +69,7 @@ export const ToolView: FC = ({
             <h2 className="mb-4 text-3xl font-medium capitalze text-white">
               Solana Powerfull Tools
             </h2>
-            <p className="text-default-200 text-sm font-medium"style={{ fontFamily: 'Arial' }}>
+            <p className="text-default-200 text-sm font-medium" style={{ fontFamily: 'Arial' }}>
               Chào mừng bạn đến với bộ công cụ mạnh mẽ của Solana. 
               Chúng tôi cung cấp các công cụ giúp bạn dễ dàng tạo token, 
               quản lý thông tin token và thực hiện các giao dịch. 
