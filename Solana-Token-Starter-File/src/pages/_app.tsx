@@ -25,13 +25,13 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
        <Footer/>
       </ContextProvider>
       {/* SCRiPTS */}
-      <script src="assets/libs/preline/preline.js"></script>
+      {/* <script src="assets/libs/preline/preline.js"></script>
       <script src="assets/libs/swiper/swiper-bundle.min.js"></script>
       <script src="assets/libs/gumshoejs/gumshoejs.polyfills.min.js"></script>
       <script src="assets/libs/lucide/lucide.min.js"></script>
       <script src="assets/libs/aos/aos.js"></script>
       <script src="assets/libs/js/swiper.js"></script>
-      <script src="assets/libs/js/them.js"></script>
+      <script src="assets/libs/js/them.js"></script> */}
     </div>
   )
 }

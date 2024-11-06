@@ -1,11 +1,19 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { MdGeneratingTokens } from "react-icons/md";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 // INTERNAL IMPORT
 import pkg from "../../../package.json";
+import { ToolView } from "views/tools";
 
-export const HomeView: FC = ({ setOpenCreateModel }) => {
+export const HomeView: FC<{ setOpenCreateModel: (open: boolean) => void }> = ({ setOpenCreateModel }) => {
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+
+  const handleCreateClick = () => {
+    console.log("Create button clicked");
+    setOpenCreateModal(true);
+  };
+
   return (
     <section id="home" className="relative overflow-hidden pb-20 pt-[72px]">
       <div className="px-6 py-4">
@@ -40,21 +48,8 @@ export const HomeView: FC = ({ setOpenCreateModel }) => {
                   Khởi chạy token Solana của bạn chỉ trong 1 nút bấm
                   </p>
                   <div className="new_add_css">
-                    <a onClick={() =>
-                      setOpenCreateModel(true)}
-                      className="hover:bg-primary-hover pe-4 group
-                    mt-10 inline-flex items-center
-                    justify-center gap-2
-                    rounded-full border
-                    border-white/10 px-1 py-1 text-white
-                    transition-all
-                    duration-300"
-                    >
-                      <span className="bg-primary/20 text-primary me-2 flex
-                  h-11 w-11 items-center
-                  justify-center rounded-full
-                  group-hover:bg-white/10
-                  group-hover:bg-white">
+                    <a onClick={() => setOpenCreateModel(true)} className="hover:bg-primary-hover pe-4 group mt-10 inline-flex items-center justify-center gap-2 rounded-full border border-white/10 px-1 py-1 text-white transition-all duration-300">
+                      <span className="bg-primary/20 text-primary me-2 flex h-11 w-11 items-center justify-center rounded-full group-hover:bg-white/10 group-hover:bg-white">
                         <i data-lucie="image">
                           <MdGeneratingTokens />
 
@@ -192,6 +187,7 @@ export const HomeView: FC = ({ setOpenCreateModel }) => {
         </div>
 
       </div>
+     
     </section>
   );
 }

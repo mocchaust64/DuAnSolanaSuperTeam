@@ -37,7 +37,7 @@ return(
     />
  </Head>
     <HomeView
-     setOpenCreateModal={setOpenCreateModal}/>
+     setOpenCreateModel={setOpenCreateModal}/>
 
    
     <ToolView
@@ -61,8 +61,7 @@ return(
 
 {openCreateModal && (
   <div className="new_loader relative h-full bg-slate-900">
-    <CreateView setOpenCreateModal = {setOpenCreateModal}/>
-
+    <CreateView setOpenCreateModal={setOpenCreateModal} />
   </div>
 )}
 
