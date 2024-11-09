@@ -1,6 +1,6 @@
 import { FC } from "react";
 
-export const FaqView: FC = ({}) => {
+export const FaqView: FC = () => {
   const questions = [
     {
       question: "Game NFT của tôi có thể chạy trên nền tảng Solana không?",
@@ -44,42 +44,28 @@ export const FaqView: FC = ({}) => {
     <section id="faq" className="py-20">
       <div className="container">
         <div className="mb-10 flex items-end justify-between">
-          <div mx-auto max-w-2xl text-center>
+          <div className="mx-auto max-w-2xl text-center">
             <h2 className="mb-4 text-3xl font-medium capitalize text-white">
               Có câu hỏi nào không?
             </h2>
-            
           </div>
         </div>
         <div className="mx-auto max-w-3xl">
           <div className="hs-accordion-group space-y-4">
-            {questions.map((questions, index) => (
-              <div
-                key={index}
-                className={`hs-accordion bg-default-950/40 overflow-hidden rounded-lg border border-white/10 backdrop-blur-3xl`}
-                id={questions.id}
-              >
-                <button
-                  className="hs-accordion-toggle inline-flex items-center justify-between gap-x-3 px-6 py-4 text-left capitalize text-white transactions-all"
-                  aria-controls={`faq-accordion-${index + 1}`}
-                >
+            {questions.map((question, index) => (
+              <div key={index} className="hs-accordion bg-default-950/40 overflow-hidden rounded-lg border border-white/10 backdrop-blur-3xl">
+                <button className="hs-accordion-toggle inline-flex items-center justify-between gap-x-3 px-6 py-4 text-left capitalize text-white transactions-all">
                   <h5 className="flex text-base font-semibold">
                     <i className="me-3 h-5 w-5 stroke-white align-middle"></i>
-                    {questions.question}
+                    {question.question}
                   </h5>
                   <i className="hs-accordion-active:-rotate-180 h-4 w-4 transactions-all duration-500"></i>
                 </button>
-
-                <div
-                  id={`faq-accordion-${index + 1}`}
-                  className="hs-accordion-content w-full overflow-hidden transactions-[height] duration-300"
-                  aria-labelledby={questions.id}
-                >
+                <div className="hs-accordion-content w-full overflow-hidden transactions-[height] duration-300">
                   <div className="px-6 pb-4 pt-0">
                     <p className="text-default-300 mb-2 text-sm font-medium">
-                      {questions.answer}
+                      {question.answer}
                     </p>
-                    
                   </div>
                 </div>
               </div>
@@ -89,4 +75,4 @@ export const FaqView: FC = ({}) => {
       </div>
     </section>
   );
-}
+};

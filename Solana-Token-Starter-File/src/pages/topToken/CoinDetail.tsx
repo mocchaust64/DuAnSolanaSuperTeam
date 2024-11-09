@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { notify } from '../utils/notifications';
+import { notify } from '../../utils/notifications';
 import Chart from 'react-apexcharts';
-import { AppBar } from '../components/AppBar';
+import { AppBar } from '../../components/AppBar';
 
 // Định nghĩa kiểu dữ liệu cho coinData
 interface CoinData {
@@ -84,8 +84,8 @@ const CoinDetail = () => {
     const filteredCoins = coinData ? [coinData].filter(coin => {
         const matchesSearch = coin.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filter === 'all' || 
-            (filter === 'increase' && coin.price_change_percentage_24h > 0) || 
-            (filter === 'decrease' && coin.price_change_percentage_24h < 0);
+            (filter === 'increase' && coinData.market_data.price_change_percentage_24h > 0) || 
+            (filter === 'decrease' && coinData.market_data.price_change_percentage_24h < 0);
         return matchesSearch && matchesFilter;
     }) : [];
 
@@ -130,15 +130,20 @@ const CoinDetail = () => {
     };
 
     return (
+        <>
+           <AppBar />
         <div className="px-12 py-8 flex flex-col bg-gray-900 rounded-lg shadow-lg">
-          <div className='px-12 py-12' >
+           
+          <div className='px-12' >
             <div className='px-12'>
                 <div className='px-12'>
                     <div className='px-12'>
                         <div className='px-12'>
-                        <AppBar />
+                    
             {/* Phần tiêu đề */}
+         
             <div className="flex items-center mb-6">
+            
                 <img className="w-24 h-24 mr-4 rounded-full border-2 border-blue-500" src={coinData?.image.large} alt={coinData?.name} />
                 <div>
                     <h1 className="text-4xl font-bold text-white">{coinData?.name} - {coinData?.symbol.toUpperCase()}</h1>
@@ -190,6 +195,7 @@ const CoinDetail = () => {
             </div>
           </div>
         </div>
+        </>
     );
 };
 

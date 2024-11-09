@@ -91,7 +91,7 @@ const TopTokens: FC = () => {
                 <div 
                   key={token.id} 
                   className="bg-default-800 rounded-lg p-6 cursor-pointer hover:bg-blue-600 transition duration-300 ease-in-out"
-                  onClick={() => router.push(`/CoinDetail?id=${token.id}`)}
+                  onClick={() => router.push(`/topToken/CoinDetail?id=${token.id}`)}
                 >
                   <img src={token.image} alt={token.name} className="h-20 w-20 mb-3 mx-auto" />
                   <h3 className="text-lg font-bold text-white text-center">{token.name}</h3>

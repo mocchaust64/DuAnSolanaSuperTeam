@@ -14,6 +14,7 @@ import{HomeView,
        AirdropView,
        DonateView}
 from "../views"
+import ThreeDImageGenerator from "views/3DImage/3DImageGenerator";
 
 
 const Home: NextPage = (props) => {
@@ -24,6 +25,8 @@ const[openTokenMetaData, setOpenTokenMetaData] = useState(false);
 const[openContact, setOpenContact] = useState(false);
 const[openAirdrop, setOpenAirdrop] = useState(false);
 const[openSendTransaction, setOpenSendTransaction] = useState(false);
+const [open3DImageGenerator, setOpen3DImageGenerator] = useState(false);
+
 
 
 
@@ -46,6 +49,7 @@ return(
     setOpenCreateModal={setOpenCreateModal}
     setOpenSendTransaction={setOpenSendTransaction}
     setOpenTokenMetaData={setOpenTokenMetaData}
+    setOpen3DImageGenerator={setOpen3DImageGenerator} // Đảm bảo hàm này được truyền đúng
     />
 
 <Featureview
@@ -92,6 +96,11 @@ return(
 
   </div>
 )} 
+ {open3DImageGenerator && ( // Hiển thị form nếu open3DImageGenerator là true
+        <div className="new_loader relative h-full bg-slate-900">
+          <ThreeDImageGenerator setOpen3DImageGenerator={setOpen3DImageGenerator} />
+        </div>
+      )}
 
 
  

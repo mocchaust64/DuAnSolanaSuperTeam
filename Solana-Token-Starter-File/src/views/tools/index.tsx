@@ -17,6 +17,7 @@ interface ToolViewProps {
   setOpenCreateModal: (value: boolean) => void;
   setOpenSendTransaction: (value: boolean) => void;
   setOpenTokenMetaData: (value: boolean) => void;
+  setOpen3DImageGenerator: (value: boolean) => void;
 }
 
 import { useRouter } from 'next/router';
@@ -27,6 +28,7 @@ export const ToolView: FC<ToolViewProps> = ({
   setOpenCreateModal,
   setOpenSendTransaction,
   setOpenTokenMetaData,
+  setOpen3DImageGenerator,
 }) => {
   const [isTopTokensOpen, setIsTopTokensOpen] = useState(false);
   const router = useRouter();
@@ -61,6 +63,11 @@ export const ToolView: FC<ToolViewProps> = ({
       name: "Top Tokens",
       icon: <MdGeneratingTokens />,
       onClick: () => router.push('/topToken'), 
+    },
+    {
+      name: "AI Creates Images",
+      icon: <MdGeneratingTokens />,
+      onClick: () => setOpen3DImageGenerator(true),
     },
   ];
 

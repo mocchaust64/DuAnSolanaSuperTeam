@@ -8,6 +8,9 @@ import { Footer } from "../components/Footer";
 
 require("@solana/wallet-adapter-react-ui/styles.css");
 require("../styles/globals.css");
+import '../views/3DImage/ThreeDImageGenerator.css'; // Đảm bảo đường dẫn đúng
+
+
 
 const App: FC<AppProps> = ({ Component, pageProps }) => {
   return (
@@ -25,13 +28,13 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
        <Footer/>
       </ContextProvider>
       {/* SCRiPTS */}
-      {/* <script src="assets/libs/preline/preline.js"></script>
+      <script src="assets/libs/preline/preline.js"></script>
       <script src="assets/libs/swiper/swiper-bundle.min.js"></script>
-      <script src="assets/libs/gumshoejs/gumshoejs.polyfills.min.js"></script>
-      <script src="assets/libs/lucide/lucide.min.js"></script>
+      <script src="assets/libs/gumshoejs/gumshoe.polyfills.min.js"></script>
+      <script src="assets/libs/lucide/umd/lucide.min.js"></script>
       <script src="assets/libs/aos/aos.js"></script>
-      <script src="assets/libs/js/swiper.js"></script>
-      <script src="assets/libs/js/them.js"></script> */}
+      <script src="assets/js/swiper.js"></script>
+      <script src="assets/js/theme.js"></script>
     </div>
   )
 }

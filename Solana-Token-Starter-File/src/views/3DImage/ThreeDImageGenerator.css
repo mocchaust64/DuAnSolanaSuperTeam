@@ -1,0 +1,33 @@
+.scrollable {
+    background-color: rgba(31, 41, 55, 0.4);
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 30rem;
+    width: 100%;
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+.scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+    background: rgba(31, 41, 55, 0.4);
+    border-radius: 10px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.scrollable {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(31, 41, 55, 0.4);
+}

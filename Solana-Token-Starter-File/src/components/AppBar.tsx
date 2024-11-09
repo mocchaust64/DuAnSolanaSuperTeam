@@ -40,7 +40,7 @@ return(
       <div className="container">
         <nav>
           <a href="/" className="logo">
-            <img src="assets/images/logo1.png"
+            <img src="/assets/images/logo1.png"
             className="h-10" alt="logo"/>
           </a>
           <div className="ms-auto flex 
