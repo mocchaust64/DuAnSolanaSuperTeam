@@ -14,6 +14,7 @@ import { AiOutlineClose } from "react-icons/ai";
 // NHẬP NỘI BỘ
 import { InputView } from "../input";
 import Branding from "../../components/Branding";
+import NotificationList from "components/Notification";
 
 export const DonateView = ({ setOpenSendTransaction }) => {
   const wallet = useWallet();
@@ -75,7 +76,11 @@ export const DonateView = ({ setOpenSendTransaction }) => {
   );
 
   return (
-    <div>
+      <>
+      <div className="fixed top-0 left-0 w-full z-50">
+        <NotificationList />
+      </div>
+      <div>
       <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
         <div className="container">
           <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
@@ -131,5 +136,7 @@ export const DonateView = ({ setOpenSendTransaction }) => {
         </div>
       </section>
     </div>
+      </>
+    
   );
 };

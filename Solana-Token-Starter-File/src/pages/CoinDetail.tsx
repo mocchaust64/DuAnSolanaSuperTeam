@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { notify } from '../utils/notifications';
@@ -25,6 +24,8 @@ interface CoinData {
         total_supply: number;
         price_change_percentage_24h: number;
     };
+    market_cap_rank: number;
+    symbol: string;
 }
 
 const CoinDetail = () => {
@@ -33,6 +34,8 @@ const CoinDetail = () => {
     const [coinData, setCoinData] = useState<CoinData | null>(null);
     const [loading, setLoading] = useState(true);
     const [historicalData, setHistoricalData] = useState([]); // Dữ liệu lịch sử giá
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filter, setFilter] = useState<'all' | 'increase' | 'decrease'>('all');
 
     useEffect(() => {
         if (id) {
@@ -78,6 +81,14 @@ const CoinDetail = () => {
         }
     };
 
+    const filteredCoins = coinData ? [coinData].filter(coin => {
+        const matchesSearch = coin.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesFilter = filter === 'all' || 
+            (filter === 'increase' && coin.price_change_percentage_24h > 0) || 
+            (filter === 'decrease' && coin.price_change_percentage_24h < 0);
+        return matchesSearch && matchesFilter;
+    }) : [];
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -95,64 +106,89 @@ const CoinDetail = () => {
             },
             xaxis: {
                 type: 'datetime',
+                labels: {
+                    style: {
+                        colors: 'white', // Đổi màu chữ thành trắng
+                    },
+                },
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        colors: 'white', // Đổi màu chữ thành trắng
+                    },
+                },
             },
             title: {
                 text: 'Biểu Đồ Lịch Sử Giá',
                 align: 'left' as 'left',
+                style: {
+                    color: 'white', // Đổi màu tiêu đề thành trắng
+                },
             },
         },
     };
 
     return (
-        <div className="px-12 py-8 flex flex-col bg-gray-80 rounded-lg shadow-md">
-              <AppBar />
+        <div className="px-12 py-8 flex flex-col bg-gray-900 rounded-lg shadow-lg">
+          <div className='px-12 py-12' >
+            <div className='px-12'>
+                <div className='px-12'>
+                    <div className='px-12'>
+                        <div className='px-12'>
+                        <AppBar />
             {/* Phần tiêu đề */}
             <div className="flex items-center mb-6">
-                <img className="w-20 mr-4" src={coinData?.image.large} alt={coinData?.name} />
+                <img className="w-24 h-24 mr-4 rounded-full border-2 border-blue-500" src={coinData?.image.large} alt={coinData?.name} />
                 <div>
-                    <h1 className="text-3xl font-bold text-white">{coinData?.name} - {coinData?.symbol.toUpperCase()}</h1>
-                    <p className="text-lg font-bold text-black">Rank: {coinData?.market_cap_rank}</p>
-                    <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg">Thêm vào danh sách yêu thích</button>
+                    <h1 className="text-4xl font-bold text-white">{coinData?.name} - {coinData?.symbol.toUpperCase()}</h1>
+                    <p className="text-lg font-bold text-gray-300">Rank: {coinData?.market_cap_rank}</p>
+                    <button className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">Thêm vào danh sách yêu thích</button>
                 </div>
             </div>
 
             {/* Thông tin giá */}
             <div className="flex justify-between mb-6">
-                <p className="text-2xl font-bold text-white">Giá Hiện Tại: <span className="font-semibold">${coinData?.market_data.current_price.usd}</span></p>
-                <p className="text-lg font-bold text-black">Tăng/Giảm 24h: <span className={`font-semibold ${coinData?.market_data.price_change_percentage_24h < 0 ? 'text-red-500' : 'text-green-500'}`}>{coinData?.market_data.price_change_percentage_24h}%</span></p>
+                <p className="text-3xl font-bold text-white">Giá Hiện Tại: <span className="font-semibold text-yellow-400">${coinData?.market_data.current_price.usd}</span></p>
+                <p className="text-lg font-bold text-gray-300">Tăng/Giảm 24h: <span className={`font-semibold ${coinData?.market_data.price_change_percentage_24h < 0 ? 'text-red-500' : 'text-green-500'}`}>{coinData?.market_data.price_change_percentage_24h}%</span></p>
             </div>
 
             {/* Biểu đồ giá */}
-            <div className="flex-1 border border-gray-300 p-4 rounded-lg bg-white shadow-sm mb-6">
+            <div className="flex-1 border border-gray-600 p-4 rounded-lg bg-gray-800 shadow-md mb-6">
                 <Chart options={chartData.options} series={chartData.series} type="line" height={350} />
                 {/* Bộ lọc thời gian cho biểu đồ */}
                 <div className="flex justify-center mt-2">
-                    <button className="mx-2 px-3 py-1 border rounded-lg">1 ngày</button>
-                    <button className="mx-2 px-3 py-1 border rounded-lg">7 ngày</button>
-                    <button className="mx-2 px-3 py-1 border rounded-lg">1 tháng</button>
-                    <button className="mx-2 px-3 py-1 border rounded-lg">1 năm</button>
+                    <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">1 ngày</button>
+                    <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">7 ngày</button>
+                    <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">1 tháng</button>
+                    <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">1 năm</button>
                 </div>
             </div>
 
             {/* Thông tin chi tiết */}
             <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-                    <p className="font-bold text-black">Khối Lượng Giao Dịch 24h:</p>
-                    <p className="font-semibold">${coinData?.market_data.total_volume.usd}</p>
+                <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+                    <p className="font-bold text-gray-300">Khối Lượng Giao Dịch 24h:</p>
+                    <p className="font-semibold text-white">${coinData?.market_data.total_volume.usd}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-                    <p className="font-bold text-black">Tổng Cung:</p>
-                    <p className="font-semibold">{coinData?.market_data.total_supply}</p>
+                <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+                    <p className="font-bold text-gray-300">Tổng Cung:</p>
+                    <p className="font-semibold text-white">{coinData?.market_data.total_supply}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-                    <p className="font-bold text-black">Lượng Cung Lưu Hành:</p>
-                    <p className="font-semibold">{coinData?.market_data.circulating_supply}</p>
+                <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+                    <p className="font-bold text-gray-300">Lượng Cung Lưu Hành:</p>
+                    <p className="font-semibold text-white">{coinData?.market_data.circulating_supply}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-                    <p className="font-bold text-black">Tỷ Lệ Thay Đổi 24h:</p>
-                    <p className="font-semibold">{coinData?.market_data.price_change_percentage_24h}%</p>
+                <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
+                    <p className="font-bold text-gray-300">Tỷ Lệ Thay Đổi 24h:</p>
+                    <p className="font-semibold text-white">{coinData?.market_data.price_change_percentage_24h}%</p>
                 </div>
             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
         </div>
     );
 };

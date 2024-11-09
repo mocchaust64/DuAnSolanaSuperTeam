@@ -5,6 +5,7 @@ import { LAMPORTS_PER_SOL, TransactionSignature } from "@solana/web3.js";
 import { notify } from "../../utils/notifications";
 import { AiOutlineClose } from "react-icons/ai";
 import Branding from "../../components/Branding";
+import NotificationList from "../../components/Notification";
 
 interface AirdropViewProps {
   setOpenAirdrop: (open: boolean) => void;
@@ -46,7 +47,7 @@ export const AirdropView: FC<AirdropViewProps> = ({ setOpenAirdrop }) => {
       signature = await connection.requestAirdrop(publicKey, LAMPORTS_PER_SOL);
       notify({
         type: "success", 
-        message: "You have successfully claimed 1 Airdrop",
+        message: "Bạn đã yêu cầu thành công 1 Airdrop",
         txid: signature,
       });
 
@@ -61,7 +62,7 @@ export const AirdropView: FC<AirdropViewProps> = ({ setOpenAirdrop }) => {
     } catch (error: any) {
       notify({
         type: "error",
-        message: "Airdrop failed",
+        message: "Yêu cầu Airdrop thất bại thử lại sau 24h",
         description: error?.message,
         txid: signature,
       });
@@ -84,14 +85,15 @@ export const AirdropView: FC<AirdropViewProps> = ({ setOpenAirdrop }) => {
 
   return (
     <div>
+      
       <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
         <div className="container">
           <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
             <div className="grid gap-10 lg:grid-cols-2">
               <Branding
                 image="auth-img"
-                title="To Build your solana token Creator"
-                message="Try and create your first ever solana project, and if you want to master blockchain development then check the course"
+                title="Airdrop Token trên Solana"
+                message="Hãy thử tạo Token, NFT trên Solana đầu tiên của bạn."
               />
               <div className="lg:ps-0 flex h-full flex-col p-10">
                 <div className="pb-10">
@@ -106,7 +108,7 @@ export const AirdropView: FC<AirdropViewProps> = ({ setOpenAirdrop }) => {
                     )}
                   </h4>
                   <p className="text-default-300 mx-auto mb-5 max-w-sm">
-                    Now you can claim your 1 Airdrop, and use to test and create token in our platform
+                    Mỗi 24h giờ bạn có thể yêu cầu 1 Airdrop và sử dụng nó để thử nghiệm và tạo token trên nền tảng của chúng tôi.
                   </p>
                   <div className="flex items-start justify-center">
                     <img src="assets/images/logout.svg" alt="" className="h-40"/>
@@ -122,13 +124,17 @@ export const AirdropView: FC<AirdropViewProps> = ({ setOpenAirdrop }) => {
                       </span>
                     </button>
                     <CloseModal />
+                    
                   </div>
                 </div>
+                <NotificationList />
               </div>
+              
             </div>
           </div>
         </div>
       </section>
+    
     </div>
   );
 };

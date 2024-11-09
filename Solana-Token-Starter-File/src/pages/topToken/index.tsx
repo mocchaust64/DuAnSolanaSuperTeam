@@ -31,7 +31,7 @@ const TopTokens: FC = () => {
   const fetchTopTokens = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=${currentPage}&sparkline=false`);
+      const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=21&page=${currentPage}&sparkline=false`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -39,7 +39,7 @@ const TopTokens: FC = () => {
       if (Array.isArray(data)) {
         setTokens(data);
         const totalCoins = 100; // Thay đổi giá trị này nếu bạn biết tổng số coin
-        setTotalPages(Math.ceil(totalCoins / 20)); // Cập nhật totalPages
+        setTotalPages(Math.ceil(totalCoins / 21)); // Cập nhật totalPages
       } else {
         notify({ 
           type: 'error', 
@@ -109,7 +109,7 @@ const TopTokens: FC = () => {
           </div>
         </div>
       </div>
-      <Footer />
+      
     </div>
   );
 };

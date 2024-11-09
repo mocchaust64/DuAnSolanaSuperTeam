@@ -10,6 +10,7 @@ import { notify } from "..//../utils/notifications";
 
 import { InputView } from "../input";
 import Branding from "../../components/Branding";
+import NotificationList from "components/Notification";
 
 export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
 
@@ -72,6 +73,10 @@ export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
   );
 
   return (
+    <>
+    <div className="fixed top-0 left-0 w-full z-50">
+    <NotificationList />
+    </div>
     <div>
       {isLoading && (
         <div className="absolute top-0 left-0 z-50 flex h-screen w-full items-center justify-center bg-black/[.3] backdrop-blur-[10px]">
@@ -194,6 +199,7 @@ export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

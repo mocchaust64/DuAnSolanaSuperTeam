@@ -27,6 +27,7 @@ import { AiOutlineClose } from "react-icons/ai";
 import CreateSVG from "../../components/SVG/CreateSVG";
 import { InputView } from "views";
 import Branding from "../../components/Branding";
+import NotificationList from "../../components/Notification";
 
 // Environment variables
 const PINATA_API_KEY = "49d03dd184ece15831f8";
@@ -71,11 +72,11 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
 
   const validateTokenData = (token: TokenData): boolean => {
     if (!token.name || !token.symbol || !token.decimals || !token.amount) {
-      notify({ type: "error", message: "Please fill all required fields" });
+      notify({ type: "error", message: "Vui lòng điền tất cả các trường bắt buộc" });
       return false;
     }
     if (isNaN(Number(token.decimals)) || isNaN(Number(token.amount))) {
-      notify({ type: "error", message: "Decimals and Amount must be numbers" });
+      notify({ type: "error", message: "Decimals và Amount phải là số" });
       return false;
     }
     return true;
@@ -98,7 +99,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
       });
       return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
     } catch (error) {
-      notify({ type: "error", message: "Upload image failed" });
+      notify({ type: "error", message: "Tải lên hình ảnh thất bại" });
       return null;
     }
   };
@@ -114,7 +115,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
         setToken({ ...token, image: imgUrl });
       }
     } catch (error) {
-      notify({ type: "error", message: "Failed to upload image" });
+      notify({ type: "error", message: "Tải lên hình ảnh thất bại" });
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +127,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
       const { name, symbol, description, image } = token;
       
       if (!name || !symbol || !description || !image) {
-        throw new Error("All fields are required");
+        throw new Error("Tất cả các trường đều là bắt buộc");
       }
 
       const data = JSON.stringify({
@@ -149,8 +150,8 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
 
       return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
     } catch (error) {
-      console.error("Metadata upload error:", error);
-      throw new Error("Failed to upload metadata");
+      console.error("Lỗi tải lên metadata:", error);
+      throw new Error("Tải lên metadata thất bại");
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +160,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
   const createToken = useCallback(async (token: TokenData) => {
     try {
       if (!publicKey) {
-        notify({ type: "error", message: "Please connect your wallet first" });
+        notify({ type: "error", message: "Vui lòng kết nối ví của bạn trước" });
         return;
       }
 
@@ -232,7 +233,8 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
           mintKeypair.publicKey
         ),
         createMintToInstruction(
-          mintKeypair.publicKey,          tokenATA,
+          mintKeypair.publicKey,
+          tokenATA,
           publicKey,
           Number(token.amount) * Math.pow(10, Number(token.decimals))
         ),
@@ -252,15 +254,15 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
       setTokenMintAddress(mintKeypair.publicKey.toString());
       notify({
         type: "success",
-        message: "Token created successfully!",
+        message: "Token đã được tạo thành công!",
         txid: signature,
       });
 
     } catch (error: any) {
-      console.error("Error creating token:", error);
+      console.error("Lỗi tạo token:", error);
       notify({
         type: "error",
-        message: `Token Creation failed: ${error.message}`
+        message: `Tạo token thất bại: ${error.message}`
       });
     } finally {
       setIsLoading(false);
@@ -269,6 +271,10 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
 
   return (
     <>
+    <div className="fixed top-0 left-0 w-full z-50">
+    <NotificationList />
+    </div>
+    
       {isLoading && (
         <div className="absolute top-0 left-0 z-50 flex h-screen w-full items-center justify-center bg-black/[.3] backdrop-blur-[10px]">
           <ClipLoader />
@@ -289,7 +295,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                           <CreateSVG />
                         </div>
                         <div className="text">
-                          <span>Click to upload image</span>
+                          <span>Nhấn để tải lên hình ảnh</span>
                         </div>
                         <input type="file" id="file" onChange={handleImageChange} />
                       </label>
@@ -300,37 +306,37 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                     rows={6} 
                     onChange={(e) => handleFormFieldChange("description", e)}
                     className="border-default-200 relative mt-48 block w-full rounded border-white/10 bg-transparent py-1.5 px-3 text-white/80 focus:border-white/25 focus:ring-transparent"
-                    placeholder="Description of your token"
+                    placeholder="Mô tả về token của bạn"
                   ></textarea>
                 </div>
 
                 <div className="lg:ps-0 flex flex-col p-10" >
                   <div className="pb-6 my-auto">
                     <h4 className="mb-4 text-2xl font-bold text-white">
-                      Solana Token Creator
+                      Trình tạo Token Solana
                     </h4>
                     <p className="text-default-300 mb-8 max-w-sm">
-                      Kindly provide all the details about your token
+                      Vui lòng cung cấp tất cả thông tin về token của bạn
                     </p>
                     <div className="text-start">
                       <InputView
-                        name="Name"
-                        placeholder="name"
+                        name="Tên"
+                        placeholder="tên"
                         clickhandle={(e) => handleFormFieldChange("name", e)}
                       />
                       <InputView
-                        name="Symbol"
-                        placeholder="symbol"
+                        name="Ký hiệu"
+                        placeholder="ký hiệu"
                         clickhandle={(e) => handleFormFieldChange("symbol", e)}
                       />
                       <InputView
-                        name="Decimals"
-                        placeholder="decimals"
+                        name="Số thập phân"
+                        placeholder="số thập phân"
                         clickhandle={(e) => handleFormFieldChange("decimals", e)}
                       />
                       <InputView
-                        name="Amount"
-                        placeholder="amount"
+                        name="Số lượng"
+                        placeholder="số lượng"
                         clickhandle={(e) => handleFormFieldChange("amount", e)}
                       />
                       <div className="mb-6 text-center">
@@ -339,7 +345,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                           className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500" 
                           type="submit"
                         >
-                          <span className="fw-bold">Create Token</span>
+                          <span className="fw-bold">Tạo Token</span>
                         </button>
                       </div>
                     </div>
@@ -363,7 +369,10 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
               </div>
             </div>
           </div>
+          
         </section>
+        
+        
       ) : (
         <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
           <div className="container">
@@ -371,8 +380,8 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
               <div className="grid gap-10 lg:grid-cols-2">
                 <Branding 
                   image="auth-img"
-                  title="To Build your solana token Creator"
-                  message="Try and create your first ever solana project, and if you want to master blockchain development then check the course"
+                  title="Xây dựng Trình tạo Token Solana của bạn"
+                  message="Hãy thử tạo dự án Solana đầu tiên của bạn và nếu bạn muốn thành thạo phát triển blockchain, hãy tham gia khóa học."
                 />
 
                 <div className="lg:ps-0 flex h-full flex-col p-10">
@@ -384,10 +393,10 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
 
                   <div className="my-auto pb-6 text-center">
                     <h4 className="mb-4 text-2xl font-bold text-white">
-                      Link to your new token
+                      Liên kết đến token mới của bạn
                     </h4>
                     <p className="text-default-300 mx-auto mb-5 max-w-sm">
-                      Your Solana token is successfully created, check now on explorer
+                      Token Solana của bạn đã được tạo thành công, hãy kiểm tra ngay trên explorer
                     </p>
 
                     <div className="flex items-start justify-center">
@@ -401,14 +410,14 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                     <div className="mt-5 w-full text-center">
                       <p className="text-default-300 text-base font-medium leading-6">
                         <InputView
-                          name="Token Address"
+                          name="Địa chỉ Token"
                           placeholder={tokenMintAddress}                  
                         />
                         <span 
                           className="cursor-pointer"
                           onClick={() => navigator.clipboard.writeText(tokenMintAddress)}
                         >
-                          Copy
+                          Sao chép
                         </span>
                       </p>
 
@@ -420,24 +429,22 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                           className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
                         >
                           <span className="fw-bold">
-                            View On Solana
+                            Xem trên Solana
                           </span>
-                          
                         </a>
-                        
                       </div>
                       <ul className="flex flex-wrap items-center justify-center gap-2">
-                      <li>
-                        <a 
-                          onClick={() => setOpenCreateModal(false)} 
-                          className="group inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-2xl transition-all duration-500 hover:bg-blue-600/60"
-                        >
-                          <i className="text-2xl text-white group-hover:text-white">
-                            <AiOutlineClose/>
-                          </i>
-                        </a>
-                      </li>
-                    </ul>
+                        <li>
+                          <a 
+                            onClick={() => setOpenCreateModal(false)} 
+                            className="group inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-2xl transition-all duration-500 hover:bg-blue-600/60"
+                          >
+                            <i className="text-2xl text-white group-hover:text-white">
+                              <AiOutlineClose/>
+                            </i>
+                          </a>
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 </div>

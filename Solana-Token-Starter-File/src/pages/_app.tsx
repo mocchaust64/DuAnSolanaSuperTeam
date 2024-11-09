@@ -15,13 +15,13 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
       <Head>
         <title> Solana Token Creator </title>
       </Head>
+      
       <ContextProvider>
-       
-        <Notification>
-
-        </Notification>
+      
         <AppBar />
+        <Notification/>
         <Component {...pageProps} /> 
+        
        <Footer/>
       </ContextProvider>
       {/* SCRiPTS */}

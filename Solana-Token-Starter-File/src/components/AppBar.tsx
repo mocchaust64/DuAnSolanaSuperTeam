@@ -1,35 +1,36 @@
 import {FC} from 'react';
 import {LuMenu} from "react-icons/lu";
 import NetworkSwitcher from './NetworkSwitcher';
-import index from 'pages';
+import { useRouter } from 'next/router';
 
 
 export const AppBar: FC = (props)=>{
+  const router = useRouter();
 
   const menu =[
     {
       name:"Home",
-      link:"#home",
+      link:"/#home",
     },
     {
       name:"Tools",
-      link:"#tools",
+      link:"/#tools",
     },
     {
       name:"Features",
-      link:"#features",
+      link:"/#features",
     },
     {
       name:"Game NFT",
-      link:"#gamenft",
+      link:"/#gamenft",
     },
     {
       name:"Price",
-      link:"#price",
+      link:"/#price",
     },
     {
       name:"Faq",
-      link:"#faq",
+      link:"/#faq",
     },
     
   ];
@@ -69,7 +70,7 @@ return(
               {
                 menu.map((list, index)=>(
                   <li className="nav-item" key={index}>
-                    <a className="nav-link text-white hover:text-primary-500" href={list.link}>
+                    <a className="nav-link text-white hover:text-primary-500" onClick={() => router.push(list.link)}>
                       {list.name}
                     </a>
                   </li>
