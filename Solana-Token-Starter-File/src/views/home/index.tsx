@@ -1,10 +1,15 @@
 import { FC, useState } from "react";
 import { MdGeneratingTokens } from "react-icons/md";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import dynamic from 'next/dynamic';
+
+const WalletMultiButtonDynamic = dynamic(
+  async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+  { ssr: false }
+);
 
 // INTERNAL IMPORT
 import pkg from "../../../package.json";
-import { ToolView } from "views/tools";
+import { ToolView } from "../../views/tools";
 
 export const HomeView: FC<{ setOpenCreateModel: (open: boolean) => void }> = ({ setOpenCreateModel }) => {
   const [openCreateModal, setOpenCreateModal] = useState(false);
@@ -59,10 +64,11 @@ export const HomeView: FC<{ setOpenCreateModel: (open: boolean) => void }> = ({ 
                       Create
                     </a>
 
-                    <a className="mt-8">
-                      <WalletMultiButton />
-
-                    </a>
+                    <div suppressHydrationWarning>
+                      <a className="mt-8">
+                        <WalletMultiButtonDynamic />
+                      </a>
+                    </div>
 
                   </div>
                 </div>

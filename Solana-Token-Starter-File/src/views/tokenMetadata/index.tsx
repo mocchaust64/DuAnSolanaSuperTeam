@@ -4,30 +4,34 @@ import { PublicKey } from "@solana/web3.js";
 import { Metadata, PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { AiOutlineClose } from "react-icons/ai";
 import { ClipLoader } from "react-spinners";
-import { notify } from "..//../utils/notifications";
+import { notify } from "../../utils/notifications";
+import { useNetworkConfiguration } from "../../contexts/NetworkConfigurationProvider";
 
 // INTERNAL IMPORT COMPONENT
-
 import { InputView } from "../input";
 import Branding from "../../components/Branding";
-import NotificationList from "components/Notification";
+import NotificationList from "../../components/Notification";
 
-export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
+interface TokenMetadataProps {
+  setOpenTokenMetaData: (open: boolean) => void;
+}
 
-  const{connection} = useConnection();
-  const[tokenAddress, setTokenAddress] = useState("");
-  const[tokenMetadata, setTokenMetaData] = useState(null);
-  const[logo, setLogo] = useState(null);
-  const[loaded, setLoaded] = useState(false);
-  const[isLoading, setIsLoading] = useState(false);
-
-  //WRITE FUNCTION
+export const TokenMetadata: FC<TokenMetadataProps> = ({ setOpenTokenMetaData }) => {
+  const { connection } = useConnection();
+  const { networkConfiguration } = useNetworkConfiguration();
+  const [tokenAddress, setTokenAddress] = useState("");
+  const [currentTokenAddress, setCurrentTokenAddress] = useState("");
+  const [tokenMetadata, setTokenMetaData] = useState(null);
+  const [logo, setLogo] = useState(null);
+  const [loaded, setLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getMetadata = useCallback(async(form) => {
     setIsLoading(true);
     
     try{
       const tokenMint = new PublicKey(form);
+      setCurrentTokenAddress(form);
       const metadataPDA = PublicKey.findProgramAddressSync(
         [
           Buffer.from("metadata"),
@@ -48,7 +52,7 @@ export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
         setTokenAddress("");
         notify({
           type:"success",
-          message:"successfully fetch token metadata"
+          message:"Successfully fetched token metadata"
         });
     } catch(error: any) {
       notify({
@@ -57,9 +61,8 @@ export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
       });
       setIsLoading(false);
     }
-  },[tokenAddress]);
+  },[connection]);
 
-  //COMPONENT
   const CloseModal = () => (
     <a onClick={() => setOpenTokenMetaData(false)}
     className="group mt-4 inline-flex h-10 w-10 items-center justify-center
@@ -88,14 +91,11 @@ export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
         <div className="container">
           <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
             <div className="grid gap-10 lg:grid-cols-2">
-
-              {/* FIRST */}
               <Branding 
                 image="auth-img"
-                title="To Build your solana token Creator"
-                message="Try and create your first ever solana project, and if you want to master blockchain development then check the course"
+                title="Xem token của bạn"
+                message="Hãy kiểm tra token của bạn ngay"
               />
-              {/* SECOND  */}
               {
                 !loaded ? (
                   <div className="lg:ps-0 flex h-full flex-col p-10">
@@ -178,13 +178,13 @@ export const TokenMetadata: FC = ({setOpenTokenMetaData}) => {
                         
                         <div className="mb-6 text-center">
                           <a 
-                            href={tokenMetadata.uri}
+                            href={`https://solscan.io/token/${currentTokenAddress}?cluster=${networkConfiguration}`}
                             target="_blank"
                             rel="noreferrer"
                             className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
                           >
                             <span className="fw-bold">
-                              Open URI
+                              Xem trên Solscan
                             </span>
                           </a>
                         </div>

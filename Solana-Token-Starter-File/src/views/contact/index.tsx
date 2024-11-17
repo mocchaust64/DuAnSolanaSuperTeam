@@ -2,7 +2,7 @@ import { useForm, ValidationError } from "@formspree/react";
 import { AiOutlineClose } from "react-icons/ai";
 import { notify } from "../../utils/notifications";
 import Branding from "../../components/Branding";
-import NotificationList from "components/Notification";
+import NotificationList from "@components/Notification";
 import React, { FC, useState, useRef } from "react";
 
 interface ContactViewProps {
@@ -11,6 +11,8 @@ interface ContactViewProps {
 
 export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
   const [state, handleSubmit] = useForm("xqakpljw");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [emailError, setEmailError] = useState("");
   const [messageError, setMessageError] = useState("");
 
@@ -44,16 +46,15 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
       message: "Cảm ơn bạn đã gửi tin nhắn, chúng tôi sẽ phản hồi sớm.",
     });
     setTimeout(() => {
-      setOpenContact(false);
-      if (emailRef.current) emailRef.current.value = "";
-      if (messageRef.current) messageRef.current.value = "";
+      setEmail("");
+      setMessage("");
+      setEmailError("");
+      setMessageError("");
     }, 2000);
   };
 
   const handleSubmitWithSuccess = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const email = emailRef.current?.value || "";
-    const message = messageRef.current?.value || "";
 
     if (!validateForm(email, message)) {
       return;
@@ -61,16 +62,11 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
 
     const result = await handleSubmit(event);
 
-    console.log("State after submission:", state);
-
     if (state.succeeded) {
       onSubmitSuccess();
     } else {
-      console.error("Lỗi trong quá trình gửi form:", state.errors);
-      notify({
-        type: "error",
-        message: "Có lỗi xảy ra khi gửi form. Vui lòng kiểm tra lại.",
-      });
+      console.error("Lỗi trong quá trình gửi form:", state.errors || "Không có thông tin lỗi");
+      console.log("Chi tiết state:", state);
     }
   };
 
@@ -87,6 +83,10 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
 
   return (
     <>
+    <div className="fixed top-0 left-0 w-full z-50">
+    <NotificationList />
+    </div>
+    
       <div>
         <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
           <div className="container">
@@ -94,8 +94,8 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
               <div className="grid gap-10 lg:grid-cols-2">
                 <Branding
                   image="auth-img"
-                  title="To Build your Solana Token Creator"
-                  message="Try and create your first ever Solana project, and if you want to master blockchain development then check the course"
+                  title="Liên hệ với chúng tôi"
+                  message="Hãy gửi tin nhắn cho chúng tôi để biết thêm chi tiết về dự án sắp ra mắt"
                 />
                 <div className="lg:ps-0 flex h-full flex-col p-10">
                   <div className="pb-10">
@@ -120,21 +120,29 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
                             type="email"
                             ref={emailRef}
                             name="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="border-default-200 block w-full rounded border-white/25 focus:ring-transparent"
                             placeholder="email"
                           />
                           <ValidationError prefix="Email" field="email" errors={state.errors} />
-                          {emailError && <p className="text-red-500">{emailError}</p>}
+                          {emailError && <label className="text-red-500">{emailError}</label>}
                         </div>
                         <textarea
                           name="message"
                           ref={messageRef}
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
                           className="border-default-200 relative block w-full rounded border-white/25 focus:ring-transparent"
                           placeholder="message"
                         ></textarea>
                         <ValidationError prefix="Message" field="message" errors={state.errors} />
-                        {messageError && <p className="text-red-500">{messageError}</p>}
-                        <div className="mb-6 text-center">
+                        {messageError && <label className="text-red-500">{messageError}</label>}
+                        <div className="mb-6 text-center mt-4">
+                        {state.succeeded && <label className="text-green-500 mt-4 mb-2">Cảm ơn bạn đã gửi tin nhắn!</label>}
+                      {state.errors && Object.keys(state.errors).length > 0 && (
+                            <label className="text-red-500">Có lỗi xảy ra khi gửi form. Vui lòng kiểm tra lại.</label>
+                          )}
                           <button
                             type="submit"
                             disabled={state.submitting}
@@ -142,9 +150,11 @@ export const ContactView: FC<ContactViewProps> = ({ setOpenContact }) => {
                           >
                             <span className="fw-bold">Send Message</span>
                           </button>
+                          
                           <CloseModal />
                         </div>
                       </form>
+                     
                     </div>
                   </div>
                 </div>

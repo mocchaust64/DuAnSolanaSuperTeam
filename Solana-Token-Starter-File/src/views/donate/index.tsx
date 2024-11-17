@@ -8,13 +8,13 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { notify } from "utils/notifications";
+import { notify } from "../../utils/notifications";
 import { AiOutlineClose } from "react-icons/ai";
 
 // NHẬP NỘI BỘ
 import { InputView } from "../input";
 import Branding from "../../components/Branding";
-import NotificationList from "components/Notification";
+import NotificationList from "../../components/Notification";
 
 export const DonateView = ({ setOpenSendTransaction }) => {
   const wallet = useWallet();

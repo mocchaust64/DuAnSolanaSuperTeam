@@ -14,7 +14,7 @@ import{HomeView,
        AirdropView,
        DonateView}
 from "../views"
-import ThreeDImageGenerator from "views/3DImage/3DImageGenerator";
+import ThreeDImageGenerator from "@views/3DImage/3DImageGenerator";
 
 
 const Home: NextPage = (props) => {

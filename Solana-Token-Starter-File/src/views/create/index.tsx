@@ -22,10 +22,10 @@ import {
 import axios from "axios";
 import { notify } from "../../utils/notifications";
 import { ClipLoader } from "react-spinners";
-import { useNetworkConfiguration } from "contexts/NetworkConfigurationProvider";
+import { useNetworkConfiguration } from "@contexts/NetworkConfigurationProvider";
 import { AiOutlineClose } from "react-icons/ai";
 import CreateSVG from "../../components/SVG/CreateSVG";
-import { InputView } from "views";
+import { InputView } from "../input";
 import Branding from "../../components/Branding";
 import NotificationList from "../../components/Notification";
 
@@ -381,7 +381,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                 <Branding 
                   image="auth-img"
                   title="Xây dựng Trình tạo Token Solana của bạn"
-                  message="Hãy thử tạo dự án Solana đầu tiên của bạn và nếu bạn muốn thành thạo phát triển blockchain, hãy tham gia khóa học."
+                  message="Hãy thử tạo token Solana đầu tiên của bạn."
                 />
 
                 <div className="lg:ps-0 flex h-full flex-col p-10">

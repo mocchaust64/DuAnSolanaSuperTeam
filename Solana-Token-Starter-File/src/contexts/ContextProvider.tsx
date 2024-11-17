@@ -51,11 +51,17 @@ const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   return (
-    <ConnectionProvider endpoint = {endPoint} >
-      <WalletProvider wallets={wallets} onError={onError} autoConnect={autoConnect}>
-        <ReactUIWalletModalProvider>{children}</ReactUIWalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <ConnectionProvider endpoint={endPoint}>
+    <WalletProvider wallets={wallets} onError={onError} autoConnect={autoConnect}>
+      <div suppressHydrationWarning>
+        <ReactUIWalletModalProvider>
+          <div suppressHydrationWarning>
+            {children}
+          </div>
+        </ReactUIWalletModalProvider>
+      </div>
+    </WalletProvider>
+  </ConnectionProvider>
   );
 };
 
@@ -78,7 +84,7 @@ export const ContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
 // Trạng thái tự động kết nối: Sử dụng hook useAutoConnect để lấy trạng thái tự động kết nối.
 // Cấu hình mạng: Sử dụng hook useNetworkConfiguration để lấy cấu hình mạng và chuyển đổi kiểu.
 // Tạo endpoint: Sử dụng useMemo để tạo endpoint cho mạng, chỉ cập nhật khi network thay đổi.
-// Xác định endpoint: Dựa trên giá trị của network, xác định endpoint cho ví.
+// Xác định endpoint: Dựa trên giá trị của network, xác định endpoint cho v.
 // Tạo danh sách ví: Sử dụng useMemo để tạo danh sách các adapter ví, chỉ cập nhật khi network thay đổi.
 // Xử lý lỗi: Định nghĩa hàm xử lý lỗi, sử dụng notify để hiển thị thông báo lỗi và ghi lỗi vào console.
 // Trả về JSX: Component trả về một cấu trúc JSX bao gồm ConnectionProvider, WalletProvider, và ReactUIWalletModalProvider.

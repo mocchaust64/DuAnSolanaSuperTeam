@@ -20,7 +20,7 @@ const Branding: React.FC<BrandingProps> = ({ image, title, message }) => {
         <div className="flex h-full items-end justify-center">
           <div className="text-start p-6">
             <h5 className="mb-3 text-xl font-bold text-white">
-              Solana Token Creator 
+              Supper Team Viet Nam
               <br/>
               {title}
 
