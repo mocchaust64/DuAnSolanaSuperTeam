@@ -1,0 +1,13 @@
+export {HomeView} from "./home";
+export {ToolView} from "./tools";
+export {Featureview} from "./feature";
+export {OfferView} from "./offer";
+export {FaqView} from "./faq";
+export {AirdropView} from "./airdrop";
+export {DonateView} from "./donate";
+export {CreateView} from "./create";
+export {InputView} from "./input";
+export {TokenMetadata} from "./tokenMetadata";
+export {ContactView } from "./contact";
+export {BurnView } from "./burn";
+export {TransferView} from "./transfer token";

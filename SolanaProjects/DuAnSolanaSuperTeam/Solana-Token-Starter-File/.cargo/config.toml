@@ -1,0 +1,7 @@
+
+[build]
+rustflags = ["-C", "target-feature=+crt-static"]
+target-dir = "/tmp/target"
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
