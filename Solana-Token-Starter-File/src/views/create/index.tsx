@@ -4,21 +4,23 @@ import {
   Keypair,
   PublicKey,
   SystemProgram,
-  Transaction
+  Transaction,
+  SYSVAR_RENT_PUBKEY,
+
+  ComputeBudgetProgram
 } from "@solana/web3.js";
 import {
-  MINT_SIZE,
+
   TOKEN_PROGRAM_ID,
-  createInitializeMintInstruction,
-  getMinimumBalanceForRentExemptMint,
+
   getAssociatedTokenAddress,
-  createMintToInstruction,
+
   createAssociatedTokenAccountInstruction,
+
 } from "@solana/spl-token";
 import {
-  PROGRAM_ID,
-  createCreateMetadataAccountV3Instruction,
-} from "@metaplex-foundation/mpl-token-metadata";
+  PROGRAM_ID as METADATA_PROGRAM_ID
+} from '@metaplex-foundation/mpl-token-metadata';
 import axios from "axios";
 import { notify } from "../../utils/notifications";
 import { ClipLoader } from "react-spinners";
@@ -28,22 +30,18 @@ import CreateSVG from "../../components/SVG/CreateSVG";
 import { InputView } from "../input";
 import Branding from "../../components/Branding";
 import NotificationList from "../../components/Notification";
+import { getProgram } from "../../utils/program";
+import { BN } from "@project-serum/anchor";
+import { TokenData } from '../../utils/token';
 
 // Environment variables
 const PINATA_API_KEY = "49d03dd184ece15831f8";
 const PINATA_SECRET_KEY = "1f57f4848817f0a46c3c75bcd41eddef3d1f461c3ee8f935b7a643cf64d6bcc8";
 
+
 interface CreateViewProps {
   setOpenCreateModal: (value: boolean) => void;
-}
-
-interface TokenData {
-  name: string;
-  symbol: string;
-  decimals: string;
-  amount: string;
-  image: string;
-  description: string;
+  
 }
 
 export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
@@ -51,41 +49,88 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
   const { publicKey, sendTransaction } = useWallet();
   const { networkConfiguration } = useNetworkConfiguration();
 
-  const [tokenUri, setTokenUri] = useState("");
+  
   const [tokenMintAddress, setTokenMintAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<TokenData>({
     name: "",
     symbol: "",
-    decimals: "",
-    amount: "",
-    image: "",
     description: "",
+    image: "",
+    amount: "",
+    decimals: 9,
   });
 
   const handleFormFieldChange = (
-    fieldName: keyof TokenData, 
+    fieldName: keyof TokenData,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setToken({ ...token, [fieldName]: e.target.value });
   };
 
+  const calculateTokenAmount = (amount: string, decimals: number): BN => {
+    try {
+      // Loại bỏ dấu phẩy và chuyển dấu chấm
+      const cleanAmount = amount.replace(/,/g, '').replace(/\s/g, '');
+      
+      // Tách phần nguyên và phần thập phân
+      const [integerPart = '0', decimalPart = ''] = cleanAmount.split('.');
+      
+      // Xử lý phần thập phân theo decimals
+      const paddedDecimal = decimalPart.padEnd(decimals, '0').slice(0, decimals);
+      
+      // Ghép số lại thành một chuỗi không có dấu chấm
+      const fullAmount = integerPart + paddedDecimal;
+      
+      // Loại bỏ các số 0 ở đầu
+      const cleanNumber = fullAmount.replace(/^0+/, '') || '0';
+      
+      return new BN(cleanNumber);
+    } catch (error) {
+      throw new Error("Số lượng token không hợp lệ");
+    }
+  };
+
   const validateTokenData = (token: TokenData): boolean => {
-    if (!token.name || !token.symbol || !token.decimals || !token.amount) {
+    if (!token.name || !token.symbol || !token.amount || !token.image) {
       notify({ type: "error", message: "Vui lòng điền tất cả các trường bắt buộc" });
       return false;
     }
-    if (isNaN(Number(token.decimals)) || isNaN(Number(token.amount))) {
-      notify({ type: "error", message: "Decimals và Amount phải là số" });
+
+    try {
+      const parsedAmount = parseFloat(token.amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        throw new Error("Amount phải là số dương");
+      }
+      
+      // Tính toán số lượng thực với decimals
+      const actualAmount = new BN(token.amount).mul(new BN(10).pow(new BN(token.decimals)));
+      
+      // Kiểm tra giới hạn u64: 2^64 - 1
+      const U64_MAX = new BN("18446744073709551615"); // 2^64 - 1
+      
+      if (actualAmount.gt(U64_MAX)) {
+        notify({ type: "error", message: "Số lượng token vượt quá giới hạn u64" });
+        return false;
+      }
+
+      // Cập nhật amount
+      token.amount = actualAmount.toString();
+    } catch (error: any) {
+      notify({ type: "error", message: error.message });
       return false;
     }
+
     return true;
   };
 
   const uploadImagePinata = async (file: File): Promise<string | null> => {
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
+      formData.append('pinataOptions', JSON.stringify({
+        cidVersion: 0,
+      }));
 
       const response = await axios({
         method: "post",
@@ -97,9 +142,12 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
           "Content-Type": "multipart/form-data"
         },
       });
-      return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+
+      const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+      return ipfsUrl;
     } catch (error) {
-      notify({ type: "error", message: "Tải lên hình ảnh thất bại" });
+      console.error("Lỗi upload ảnh:", error);
+      notify({ type: "error", message: "Upload ảnh thất bại" });
       return null;
     }
   };
@@ -110,12 +158,18 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
       if (!file) return;
 
       setIsLoading(true);
-      const imgUrl = await uploadImagePinata(file);
-      if (imgUrl) {
-        setToken({ ...token, image: imgUrl });
+
+      // Upload ảnh lên Pinata và lấy URL
+      const imageUrl = await uploadImagePinata(file);
+      if (imageUrl) {
+        setToken(prev => ({
+          ...prev,
+          image: imageUrl // Lưu URL thay vì base64
+        }));
       }
     } catch (error) {
-      notify({ type: "error", message: "Tải lên hình ảnh thất bại" });
+      console.error("Lỗi xử lý ảnh:", error);
+      notify({ type: "error", message: "Xử lý ảnh thất bại" });
     } finally {
       setIsLoading(false);
     }
@@ -123,24 +177,33 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
 
   const uploadMetadata = async (token: TokenData): Promise<string> => {
     try {
-      setIsLoading(true);
-      const { name, symbol, description, image } = token;
-      
-      if (!name || !symbol || !description || !image) {
-        throw new Error("Tất cả các trường đều là bắt buộc");
-      }
-
-      const data = JSON.stringify({
-        name,
-        symbol,
-        description,
-        image,
-      });
+      const metadata = {
+        name: token.name,
+        symbol: token.symbol,
+        description: token.description,
+        image: token.image,
+        attributes: [],
+        properties: {
+          files: [
+            {
+              uri: token.image,
+              type: "image/png"
+            }
+          ],
+          category: "image",
+          creators: [
+            {
+              address: publicKey.toString(),
+              share: 100
+            }
+          ]
+        }
+      };
 
       const response = await axios({
-        method: "POST",
+        method: "post",
         url: "https://api.pinata.cloud/pinning/pinJSONToIPFS",
-        data,
+        data: metadata,
         headers: {
           pinata_api_key: PINATA_API_KEY,
           pinata_secret_api_key: PINATA_SECRET_KEY,
@@ -148,133 +211,185 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
         },
       });
 
-      return `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`;
+      return metadataUrl;
     } catch (error) {
-      console.error("Lỗi tải lên metadata:", error);
-      throw new Error("Tải lên metadata thất bại");
-    } finally {
-      setIsLoading(false);
+      console.error("Lỗi tạo metadata:", error);
+      throw new Error("Tạo metadata thất bại");
     }
   };
 
   const createToken = useCallback(async (token: TokenData) => {
     try {
+      // Validate và kiểm tra kết nối ví
       if (!publicKey) {
-        notify({ type: "error", message: "Vui lòng kết nối ví của bạn trước" });
-        return;
-      }
-
-      if (!validateTokenData(token)) {
+        notify({ type: "error", message: "Vui lòng kết nối ví" });
         return;
       }
 
       setIsLoading(true);
-      const lamports = await getMinimumBalanceForRentExemptMint(connection);
+
+      // Upload metadata lên Pinata trước
+      const metadataUrl = await uploadMetadata(token);
+      token.uri = metadataUrl; // Cập nhật URI cho token
+
+      // Tiếp tục tạo token với URI mới
+      const transaction = new Transaction();
+      const program = getProgram(connection, publicKey);
       const mintKeypair = Keypair.generate();
 
-      const tokenATA = await getAssociatedTokenAddress(
+      // Thêm compute budget
+      const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+        units: 300000
+      });
+      const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 50000
+      });
+      transaction.add(modifyComputeUnits, addPriorityFee);
+
+      // Tạo token mint instruction
+      const [metadataAddress] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          METADATA_PROGRAM_ID.toBuffer(),
+          mintKeypair.publicKey.toBuffer(),
+        ],
+        METADATA_PROGRAM_ID
+      );
+
+      const createMintIx = await program.methods
+        .createTokenMint(
+          token.decimals,
+          token.name,
+          token.symbol,
+          token.uri || ""
+        )
+        .accounts({
+          payer: publicKey,
+          mintAccount: mintKeypair.publicKey,
+          metadataAccount: metadataAddress,
+          tokenMetadataProgram: METADATA_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: SYSVAR_RENT_PUBKEY
+        })
+        .instruction();
+
+      // Tạo token account cho người tạo
+      const tokenAccount = await getAssociatedTokenAddress(
         mintKeypair.publicKey,
         publicKey
       );
 
-      const metadataUrl = await uploadMetadata(token);
-      
-      const metadataInstruction = createCreateMetadataAccountV3Instruction(
-        {
-          metadata: PublicKey.findProgramAddressSync(
-            [
-              Buffer.from("metadata"),
-              PROGRAM_ID.toBuffer(),
-              mintKeypair.publicKey.toBuffer(),
-            ],
-            PROGRAM_ID
-          )[0],
+      // Tạo ATA instruction
+      const createATAIx = createAssociatedTokenAccountInstruction(
+        publicKey,
+        tokenAccount,
+        publicKey,
+        mintKeypair.publicKey
+      );
+
+      // Thêm mint instruction
+      const mintIx = await program.methods
+        .mintTo(calculateTokenAmount(token.amount, token.decimals))
+        .accounts({
           mint: mintKeypair.publicKey,
-          mintAuthority: publicKey,
-          payer: publicKey,
-          updateAuthority: publicKey,
-        },
-        {
-          createMetadataAccountArgsV3: {
-            data: {
-              name: token.name,
+          tokenAccount: tokenAccount,
+          authority: publicKey,
+        })
+        .instruction();
+
+      transaction.add(createMintIx, createATAIx, mintIx);
+
+      // Gửi và xác nhận transaction
+      const signature = await sendAndConfirmTransaction(transaction, mintKeypair);
+
+      // Sau khi tạo token thành công
+      const tokenMint = mintKeypair.publicKey.toString();
+
+      try {
+        // Thêm token vào ví
+        await window.solana.request({
+          method: "wallet_watchAsset",
+          params: {
+            type: "SPL",
+            options: {
+              mint: tokenMint,
               symbol: token.symbol,
-              uri: metadataUrl,
-              creators: null,
-              sellerFeeBasisPoints: 0,
-              uses: null,
-              collection: null,
+              decimals: token.decimals,
+              image: token.image
             },
-            isMutable: false,
-            collectionDetails: null,
           }
-        }
-      );
+        });
+      } catch (error) {
+        console.error("Lỗi thêm token vào ví:", error);
+        // Bỏ qua lỗi này vì token đã được tạo thành công
+      }
 
-      const createNewTokenTransaction = new Transaction().add(
-        SystemProgram.createAccount({
-          fromPubkey: publicKey,
-          newAccountPubkey: mintKeypair.publicKey,
-          space: MINT_SIZE,
-          lamports,
-          programId: TOKEN_PROGRAM_ID,
-        }),
-        createInitializeMintInstruction(
-          mintKeypair.publicKey,
-          Number(token.decimals),
-          publicKey,
-          publicKey,
-          TOKEN_PROGRAM_ID
-        ),
-        createAssociatedTokenAccountInstruction(
-          publicKey,
-          tokenATA,
-          publicKey,
-          mintKeypair.publicKey
-        ),
-        createMintToInstruction(
-          mintKeypair.publicKey,
-          tokenATA,
-          publicKey,
-          Number(token.amount) * Math.pow(10, Number(token.decimals))
-        ),
-        metadataInstruction
-      );
+      // Lưu địa chỉ token để hiển thị form thành công
+      setTokenMintAddress(tokenMint);
 
-      const signature = await sendTransaction(
-        createNewTokenTransaction,
-        connection,
-        {
-          signers: [mintKeypair],
-        }
-      );
-
-      await connection.confirmTransaction(signature, 'confirmed');
-
-      setTokenMintAddress(mintKeypair.publicKey.toString());
       notify({
         type: "success",
         message: "Token đã được tạo thành công!",
         txid: signature,
       });
 
-    } catch (error: any) {
-      console.error("Lỗi tạo token:", error);
-      notify({
-        type: "error",
-        message: `Tạo token thất bại: ${error.message}`
-      });
-    } finally {
+      // Tắt loading sau khi hoàn tất
       setIsLoading(false);
+
+    } catch (error) {
+      handleError(error);
+      setIsLoading(false); // Tắt loading nếu có lỗi xảy ra
     }
-  }, [publicKey, connection, sendTransaction]);
+  }, [connection, publicKey]);
+
+  const sendAndConfirmTransaction = async (
+    transaction: Transaction,
+    mintKeypair: Keypair
+  ): Promise<string> => {
+    const { blockhash, lastValidBlockHeight } =
+      await connection.getLatestBlockhash('confirmed');
+
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = publicKey;
+    transaction.partialSign(mintKeypair);
+
+    const signature = await sendTransaction(transaction, connection, {
+      skipPreflight: true,
+      maxRetries: 5,
+      preflightCommitment: 'confirmed'
+    });
+
+    await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight
+    }, 'confirmed');
+
+    return signature;
+  }
+
+  const handleError = (error: any) => {
+    let errorMessage = "Tạo token thất bại";
+
+    if (error.message.includes('Transaction simulation failed')) {
+      errorMessage = "Giao dịch thất bại trong quá trình mô phỏng";
+    } else if (error.message.includes('Blockhash not found')) {
+      errorMessage = "Blockhash không hợp lệ, vui lòng thử lại";
+    } else if (error.message.includes('insufficient funds')) {
+      errorMessage = "Không đủ SOL để tạo token";
+    }
+
+    notify({ type: "error", message: errorMessage });
+  }
 
   return (
     <>
-    <div className="fixed top-0 left-0 w-full z-50">
-    <NotificationList />
-    </div>
-    
+      <div className="fixed top-0 left-0 w-full z-50">
+        <NotificationList />
+      </div>
+
       {isLoading && (
         <div className="absolute top-0 left-0 z-50 flex h-screen w-full items-center justify-center bg-black/[.3] backdrop-blur-[10px]">
           <ClipLoader />
@@ -302,8 +417,8 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                     )}
                   </div>
 
-                  <textarea 
-                    rows={6} 
+                  <textarea
+                    rows={6}
                     onChange={(e) => handleFormFieldChange("description", e)}
                     className="border-default-200 relative mt-48 block w-full rounded border-white/10 bg-transparent py-1.5 px-3 text-white/80 focus:border-white/25 focus:ring-transparent"
                     placeholder="Mô tả về token của bạn"
@@ -313,7 +428,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                 <div className="lg:ps-0 flex flex-col p-10" >
                   <div className="pb-6 my-auto">
                     <h4 className="mb-4 text-2xl font-bold text-white">
-                      Trình tạo Token Solana
+                       Tạo Token Solana
                     </h4>
                     <p className="text-default-300 mb-8 max-w-sm">
                       Vui lòng cung cấp tất cả thông tin về token của bạn
@@ -330,19 +445,14 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                         clickhandle={(e) => handleFormFieldChange("symbol", e)}
                       />
                       <InputView
-                        name="Số thập phân"
-                        placeholder="số thập phân"
-                        clickhandle={(e) => handleFormFieldChange("decimals", e)}
-                      />
-                      <InputView
                         name="Số lượng"
                         placeholder="số lượng"
                         clickhandle={(e) => handleFormFieldChange("amount", e)}
                       />
                       <div className="mb-6 text-center">
-                        <button 
-                          onClick={() => createToken(token)} 
-                          className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500" 
+                        <button
+                          onClick={() => createToken(token)}
+                          className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
                           type="submit"
                         >
                           <span className="fw-bold">Tạo Token</span>
@@ -354,12 +464,12 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                   <div className="text-center">
                     <ul className="flex flex-wrap items-center justify-center gap-2">
                       <li>
-                        <a 
-                          onClick={() => setOpenCreateModal(false)} 
+                        <a
+                          onClick={() => setOpenCreateModal(false)}
                           className="group inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-2xl transition-all duration-500 hover:bg-blue-600/60"
                         >
                           <i className="text-2xl text-white group-hover:text-white">
-                            <AiOutlineClose/>
+                            <AiOutlineClose />
                           </i>
                         </a>
                       </li>
@@ -369,25 +479,25 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
               </div>
             </div>
           </div>
-          
+
         </section>
-        
-        
+
+
       ) : (
         <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
           <div className="container">
             <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
               <div className="grid gap-10 lg:grid-cols-2">
-                <Branding 
+                <Branding
                   image="auth-img"
-                  title="Xây dựng Trình tạo Token Solana của bạn"
+                  title="Xây dựng Token Solana của bạn"
                   message="Hãy thử tạo token Solana đầu tiên của bạn."
                 />
 
                 <div className="lg:ps-0 flex h-full flex-col p-10">
                   <div className="pb-10">
                     <a className="flex">
-                      <img src="assets/images/logo1.png" alt="logo" className="h-10"/>
+                      <img src="assets/images/logo1.png" alt="logo" className="h-10" />
                     </a>
                   </div>
 
@@ -400,7 +510,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                     </p>
 
                     <div className="flex items-start justify-center">
-                      <img 
+                      <img
                         src={token.image || "assets/images/logo11.png"}
                         alt=""
                         className="h-40"
@@ -411,9 +521,9 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                       <p className="text-default-300 text-base font-medium leading-6">
                         <InputView
                           name="Địa chỉ Token"
-                          placeholder={tokenMintAddress}                  
+                          placeholder={tokenMintAddress}
                         />
-                        <span 
+                        <span
                           className="cursor-pointer"
                           onClick={() => navigator.clipboard.writeText(tokenMintAddress)}
                         >
@@ -421,8 +531,12 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                         </span>
                       </p>
 
+                      <p className="text-default-300 text-base font-medium leading-6 mt-4">
+                        <span>Mô tả: {token.description || "Chưa có mô tả"}</span>
+                      </p>
+
                       <div className="mb-6 text-center">
-                        <a 
+                        <a
                           href={`https://explorer.solana.com/address/${tokenMintAddress}?cluster=${networkConfiguration}`}
                           target="_blank"
                           rel="noreferrer"
@@ -435,12 +549,12 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                       </div>
                       <ul className="flex flex-wrap items-center justify-center gap-2">
                         <li>
-                          <a 
-                            onClick={() => setOpenCreateModal(false)} 
+                          <a
+                            onClick={() => setOpenCreateModal(false)}
                             className="group inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-2xl transition-all duration-500 hover:bg-blue-600/60"
                           >
                             <i className="text-2xl text-white group-hover:text-white">
-                              <AiOutlineClose/>
+                              <AiOutlineClose />
                             </i>
                           </a>
                         </li>

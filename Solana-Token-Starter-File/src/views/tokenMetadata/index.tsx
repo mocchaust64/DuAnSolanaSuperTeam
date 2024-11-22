@@ -29,7 +29,7 @@ export const TokenMetadata: FC<TokenMetadataProps> = ({ setOpenTokenMetaData }) 
   const getMetadata = useCallback(async(form) => {
     setIsLoading(true);
     
-    try{
+    try {
       const tokenMint = new PublicKey(form);
       setCurrentTokenAddress(form);
       const metadataPDA = PublicKey.findProgramAddressSync(
@@ -37,31 +37,41 @@ export const TokenMetadata: FC<TokenMetadataProps> = ({ setOpenTokenMetaData }) 
           Buffer.from("metadata"),
           PROGRAM_ID.toBuffer(),
           tokenMint.toBuffer()
-        ],PROGRAM_ID)[0];
-        const metadataAccount = await connection.getAccountInfo(metadataPDA);
-        const[metadata, _] = await Metadata.deserialize(metadataAccount.data);
+        ],
+        PROGRAM_ID
+      )[0];
 
-        let logoRes = await fetch(metadata.data.uri);
-        let logoJson = await logoRes.json();
-        let {image} =  logoJson;
+      const metadataAccount = await connection.getAccountInfo(metadataPDA);
+      const [metadata, _] = await Metadata.deserialize(metadataAccount.data);
 
-        setTokenMetaData({tokenMetadata, ...metadata.data});
-        setLogo(image);
-        setIsLoading(false);
-        setLoaded(true);
-        setTokenAddress("");
-        notify({
-          type:"success",
-          message:"Successfully fetched token metadata"
-        });
+      // Fetch full metadata từ URI
+      const response = await fetch(metadata.data.uri);
+      const fullMetadata = await response.json();
+      
+      setTokenMetaData({
+        ...metadata.data,
+        description: fullMetadata.description,
+        image: fullMetadata.image,
+        properties: fullMetadata.properties
+      });
+      
+      setLogo(fullMetadata.image);
+      setIsLoading(false);
+      setLoaded(true);
+      setTokenAddress("");
+      
+      notify({
+        type: "success",
+        message: "Đã lấy thông tin token thành công"
+      });
     } catch(error: any) {
       notify({
-        type:"error",
-        message:"Token Metadata Failed",
+        type: "error", 
+        message: "Không thể lấy thông tin token",
       });
       setIsLoading(false);
     }
-  },[connection]);
+  }, [connection]);
 
   const CloseModal = () => (
     <a onClick={() => setOpenTokenMetaData(false)}
@@ -156,15 +166,13 @@ export const TokenMetadata: FC<TokenMetadataProps> = ({ setOpenTokenMetaData }) 
                         <img 
                           src={logo}
                           alt=""
-                          className="h-40"
+                          className="h-40 w-40 object-cover rounded-lg"
                         />
                       </div>
   
                       <div className="mt-5 w-full text-center">
-                        <p className="text-default-300 text-base font-medium leading-6">
-                        </p>
                         <InputView
-                          name="Token Address"
+                          name="Token Name"
                           placeholder={tokenMetadata?.name}                  
                         />
                         <InputView
@@ -172,8 +180,16 @@ export const TokenMetadata: FC<TokenMetadataProps> = ({ setOpenTokenMetaData }) 
                           placeholder={tokenMetadata?.symbol || "undefined"}                  
                         />
                         <InputView
+                          name="Description"
+                          placeholder={tokenMetadata?.description || "No description"}                  
+                        />
+                        <InputView
                           name="Token URI"
                           placeholder={tokenMetadata?.uri}                  
+                        />
+                        <InputView 
+                          name="Creator"
+                          placeholder={tokenMetadata?.properties?.creators?.[0]?.address || "N/A"}
                         />
                         
                         <div className="mb-6 text-center">

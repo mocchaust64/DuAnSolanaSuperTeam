@@ -12,7 +12,9 @@ import{HomeView,
       TokenMetadata,
       ContactView,
        AirdropView,
-       DonateView}
+       DonateView,
+       TransferView,
+       BurnView}
 from "../views"
 import ThreeDImageGenerator from "@views/3DImage/3DImageGenerator";
 
@@ -26,6 +28,8 @@ const[openContact, setOpenContact] = useState(false);
 const[openAirdrop, setOpenAirdrop] = useState(false);
 const[openSendTransaction, setOpenSendTransaction] = useState(false);
 const [open3DImageGenerator, setOpen3DImageGenerator] = useState(false);
+const [openBurnModal, setOpenBurnModal] = useState(false);
+const [openTransferModal, setOpenTransferModal] = useState(false);
 
 
 
@@ -50,6 +54,8 @@ return(
     setOpenSendTransaction={setOpenSendTransaction}
     setOpenTokenMetaData={setOpenTokenMetaData}
     setOpen3DImageGenerator={setOpen3DImageGenerator} // Đảm bảo hàm này được truyền đúng
+    setOpenBurnModal={setOpenBurnModal}
+    setOpenTransferModal={setOpenTransferModal}
     />
 
 <Featureview
@@ -58,6 +64,7 @@ return(
  setOpenCreateModal={setOpenCreateModal}
  setOpenSendTransaction={setOpenSendTransaction}
  setOpenTokenMetaData={setOpenTokenMetaData}
+
 />
  <OfferView/>
 <FaqView/>
@@ -102,8 +109,18 @@ return(
         </div>
       )}
 
+{openBurnModal && (
+  <div className="new_loader relative h-full bg-slate-900">
+    <BurnView setOpenBurnModal={setOpenBurnModal} />
+  </div>
+)}
 
- 
+{openTransferModal && (
+  <div className="new_loader relative h-full bg-slate-900">
+    <TransferView setOpenTransferModal={setOpenTransferModal} />
+  </div>
+)}
+
   </>
 )
 

@@ -51,17 +51,28 @@ const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   return (
-    <ConnectionProvider endpoint={endPoint}>
-    <WalletProvider wallets={wallets} onError={onError} autoConnect={autoConnect}>
-      <div suppressHydrationWarning>
-        <ReactUIWalletModalProvider>
-          <div suppressHydrationWarning>
-            {children}
-          </div>
-        </ReactUIWalletModalProvider>
-      </div>
-    </WalletProvider>
-  </ConnectionProvider>
+    <ConnectionProvider 
+      endpoint={endPoint}
+      config={{
+        commitment: 'confirmed',
+        wsEndpoint: endPoint.replace('https', 'wss'),
+        confirmTransactionInitialTimeout: 120000,
+        disableRetryOnRateLimit: false,
+        httpHeaders: {
+          'Cache-Control': 'no-cache'
+        }
+      }}
+    >
+      <WalletProvider wallets={wallets} onError={onError} autoConnect={autoConnect}>
+        <div suppressHydrationWarning>
+          <ReactUIWalletModalProvider>
+            <div suppressHydrationWarning>
+              {children}
+            </div>
+          </ReactUIWalletModalProvider>
+        </div>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 };
 

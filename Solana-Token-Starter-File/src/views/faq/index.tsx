@@ -17,7 +17,7 @@ export const FaqView: FC = () => {
     {
       question: "Bạn có hướng dẫn về việc tích hợp Solana vào game NFT của tôi không?",
       answer:
-        "Có, chúng tôi cung cấp một loạt các hướng dẫn và tài liệu về việc tích hợp Solana vào game NFT của bạn. Hãy kiểm tra trang web chính thức của Solana để tìm hướng dẫn chi tiết.",
+        "Có, chúng tôi cung cấp một loạt các hướng dẫn và tài liệu về việc tích hợp Solana vào game NFT của bạn. Hãy kiểm tra trang web của chúng tôi để tìm hướng dẫn chi tiết.",
       id: "faq-3",
     },
     {
@@ -29,7 +29,7 @@ export const FaqView: FC = () => {
     {
       question: "Tôi cần phải có kinh nghiệm về blockchain để bắt đầu xây dựng game NFT trên Solana?",
       answer:
-        "Không, bạn không cần phải có kinh nghiệm về blockchain để bắt đầu. Tuy nhiên, có nhiều kiến thức và kỹ năng mới mà bạn sẽ cần phải học để thành công. Hãy kiểm tra các khóa học và tài liệu trên trang web chính thức của Solana để bắt đầu.",
+        "Không, bạn không cần phải có kinh nghiệm về blockchain để bắt đầu. Tuy nhiên, có nhiều kiến thức và kỹ năng mới mà bạn sẽ cần phải học để thành công. Hãy kiểm tra các khóa học và tài liệu trên trang web của chúng tôi để bắt đầu.",
       id: "faq-5",
     },
     {
