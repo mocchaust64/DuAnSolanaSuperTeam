@@ -12,6 +12,7 @@ import NotificationList from "../../components/Notification";
 import { useNetworkConfiguration } from "../../contexts/NetworkConfigurationProvider";
 import { Metadata, PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 
+
 interface TransferViewProps {
   setOpenTransferModal: (value: boolean) => void;
 }
@@ -33,6 +34,13 @@ interface TransferredTokenInfo {
   tokenImage: string;
   decimals: number;
   success: boolean;
+}
+
+interface InputViewProps {
+  name: string;
+  placeholder: string;
+  className?: string; // Thêm className là optional
+  clickhandle: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) => {
@@ -276,52 +284,57 @@ export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) =>
       );
 
       const tokens = await Promise.all(
-        tokenAccounts.value.map(async (tokenAccount) => {
-          const accountData = tokenAccount.account.data.parsed.info;
-          const mintAddress = accountData.mint;
-          const balance = accountData.tokenAmount.uiAmount;
-          
-          // Lấy metadata của token
-          const [metadataPDA] = PublicKey.findProgramAddressSync(
-            [
-              Buffer.from("metadata"),
-              PROGRAM_ID.toBuffer(),
-              new PublicKey(mintAddress).toBuffer(),
-            ],
-            PROGRAM_ID
-          );
+        tokenAccounts.value
+          .filter(account => {
+            const decimals = account.account.data.parsed.info.tokenAmount.decimals;
+            const balance = account.account.data.parsed.info.tokenAmount.uiAmount;
+            return decimals !== 0 && balance > 0;
+          })
+          .map(async (tokenAccount) => {
+            const accountData = tokenAccount.account.data.parsed.info;
+            const mintAddress = accountData.mint;
+            const balance = accountData.tokenAmount.uiAmount;
+            
+            const [metadataPDA] = PublicKey.findProgramAddressSync(
+              [
+                Buffer.from("metadata"),
+                PROGRAM_ID.toBuffer(),
+                new PublicKey(mintAddress).toBuffer(),
+              ],
+              PROGRAM_ID
+            );
 
-          try {
-            const metadataAccount = await connection.getAccountInfo(metadataPDA);
-            if (metadataAccount) {
-              const metadata = Metadata.deserialize(metadataAccount.data)[0];
-              const response = await fetch(metadata.data.uri);
-              const fullMetadata = await response.json();
-              
-              return {
-                mint: mintAddress,
-                name: metadata.data.name,
-                symbol: metadata.data.symbol,
-                balance: balance.toString(),
-                decimals: accountData.tokenAmount.decimals,
-                image: fullMetadata.image || ""
-              };
+            try {
+              const metadataAccount = await connection.getAccountInfo(metadataPDA);
+              if (metadataAccount) {
+                const metadata = Metadata.deserialize(metadataAccount.data)[0];
+                const response = await fetch(metadata.data.uri);
+                const fullMetadata = await response.json();
+                
+                return {
+                  mint: mintAddress,
+                  name: metadata.data.name,
+                  symbol: metadata.data.symbol,
+                  balance: balance.toString(),
+                  decimals: accountData.tokenAmount.decimals,
+                  image: fullMetadata.image || ""
+                };
+              }
+            } catch (error) {
+              console.error("Error getting metadata:", error);
             }
-          } catch (error) {
-            console.error("Error getting metadata:", error);
-          }
 
-          return {
-            mint: mintAddress,
-            name: "Unknown Token",
-            symbol: "Unknown",
-            balance: balance.toString(),
-            decimals: accountData.tokenAmount.decimals
-          };
-        })
+            return {
+              mint: mintAddress,
+              name: "Unknown Token",
+              symbol: "Unknown",
+              balance: balance.toString(),
+              decimals: accountData.tokenAmount.decimals
+            };
+          })
       );
 
-      setUserTokens(tokens.filter(token => token.balance !== "0"));
+      setUserTokens(tokens.filter(token => token && token.decimals !== 0));
     } catch (error) {
       console.error("Error getting user tokens:", error);
     }
@@ -418,9 +431,11 @@ export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) =>
                       <label className="text-default-300 mb-2 block text-sm">Chọn Token</label>
                       <select
                         className="w-full rounded-lg bg-default-950/40 border border-default-200/20 p-2.5 
-                        text-default-300 appearance-none cursor-pointer
-                        focus:outline-none focus:ring-2 focus:ring-blue-500/40
-                        hover:border-default-200/40 transition-colors"
+                          text-default-300 appearance-none cursor-pointer
+                          focus:outline-none focus:ring-2 focus:ring-purple-500/40
+                          hover:border-purple-400/40 transform hover:scale-[1.02]
+                          transition-all duration-300 ease-in-out
+                          backdrop-blur-xl shadow-lg shadow-purple-500/10"
                         onChange={(e) => handleTokenSelect(e.target.value)}
                         style={{
                           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23718096' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E")`,
@@ -444,13 +459,19 @@ export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) =>
                       </select>
 
                       {selectedTokenInfo && (
-                        <div className="mt-4 p-4 rounded-lg bg-default-900/40 border border-default-200/20">
+                        <div className="mt-4 p-4 rounded-lg bg-default-900/40 border border-default-200/20
+  transform hover:scale-[1.02] transition-all duration-300 ease-in-out
+  hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/10
+  backdrop-blur-xl animate-fadeIn">
                           <div className="mb-4 text-center">
                             {selectedTokenInfo.image ? (
                               <img 
                                 src={selectedTokenInfo.image}
                                 alt={selectedTokenInfo.name}
-                                className="mx-auto h-24 w-24 rounded-full border-2 border-blue-500/40 object-cover"
+                                className="mx-auto h-24 w-24 rounded-full border-2 border-purple-500/40 
+    object-cover transform hover:scale-110 transition-all duration-300
+    hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/30
+    animate-fadeIn"
                                 onError={(e) => {
                                   e.currentTarget.src = "assets/images/default-token.png"; // Thêm ảnh default
                                 }}
@@ -498,23 +519,41 @@ export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) =>
                       <InputView
                         name="Địa chỉ người nhận"
                         placeholder="Nhập địa chỉ ví người nhận"
-                        clickhandle={(e) => handleInputChange("receiver", e.target.value)}
+                        className="transform hover:scale-[1.02] transition-all duration-300"
+                        clickhandle={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange("receiver", e.target.value)}
                       />
+
                       <InputView
                         name="Số lượng"
                         placeholder="Nhập số lượng token muốn chuyển"
-                        clickhandle={(e) => handleInputChange("amount", e.target.value)}
+                        clickhandle={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange("amount", e.target.value)}
                       />
                       <div className="mb-6 text-center">
                         <button
-                          onClick={transferToken} // Sẽ implement sau
+                          onClick={transferToken}
                           disabled={isLoading}
-                          className={`bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500 ${
-                            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
+                          className={`relative overflow-hidden bg-gradient-to-r from-purple-600 to-blue-600
+    group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-3
+    text-white font-semibold text-lg backdrop-blur-2xl
+    transform hover:scale-[1.02] active:scale-[0.98]
+    transition-all duration-300 ease-in-out
+    hover:shadow-lg hover:shadow-purple-500/25
+    disabled:opacity-50 disabled:cursor-not-allowed
+    ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+    before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
+    before:via-white/10 before:to-transparent before:translate-x-[-200%]
+    hover:before:translate-x-[200%] before:transition-transform before:duration-700`}
                         >
-                          <span className="fw-bold">
-                            {isLoading ? "Đang xử lý..." : "Chuyển Token"}
+                          <span className="relative z-10">
+                            {isLoading ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white/90 
+          rounded-full animate-spin"/>
+                                <span>Đang xử lý...</span>
+                              </div>
+                            ) : (
+                              "Chuyển Token"
+                            )}
                           </span>
                         </button>
                         <CloseModal />
@@ -548,22 +587,26 @@ export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) =>
                       Thông tin Chuyển Token
                     </h4>
                     
-                    <div className="mb-8">
-                      {transferredTokenInfo.tokenImage ? (
-                        <img 
-                          src={transferredTokenInfo.tokenImage} 
-                          alt="token" 
-                          className="mx-auto h-32 w-32 object-contain rounded-full border-2 border-blue-500"
-                          onError={(e) => {
-                            e.currentTarget.src = "assets/images/default-token.png";
-                          }}
-                        />
-                      ) : (
-                        <div className="mx-auto h-32 w-32 rounded-full border-2 border-gray-500 flex items-center justify-center">
-                          <span className="text-default-300">Không có ảnh token</span>
-                        </div>
-                      )}
-                    </div>
+                    <div className="mb-8 transform hover:scale-105 transition-all duration-300
+  hover:shadow-xl hover:shadow-purple-500/20 rounded-full p-2">
+  {transferredTokenInfo.tokenImage ? (
+    <img 
+      src={transferredTokenInfo.tokenImage} 
+      alt="token" 
+      className="mx-auto h-32 w-32 object-contain rounded-full 
+        border-2 border-purple-500 transform hover:rotate-12
+        transition-all duration-500 hover:shadow-lg 
+        hover:shadow-purple-500/30 animate-fadeIn"
+      onError={(e) => {
+        e.currentTarget.src = "assets/images/default-token.png";
+      }}
+    />
+  ) : (
+    <div className="mx-auto h-32 w-32 rounded-full border-2 border-default-200/40 flex items-center justify-center bg-default-900/60">
+      <span className="text-default-300">Không có ảnh</span>
+    </div>
+  )}
+</div>
 
                     <div className="w-full text-center">
                       <InputView
@@ -594,10 +637,19 @@ export const TransferView: FC<TransferViewProps> = ({ setOpenTransferModal }) =>
                           href={`https://explorer.solana.com/address/${transferredTokenInfo.tokenMint}?cluster=${networkConfiguration}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="bg-primary-600/90 hover:bg-primary-600 group inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
+                          className="bg-gradient-to-r from-purple-600 to-blue-600 
+    group inline-flex w-full items-center justify-center rounded-lg 
+    px-6 py-3 text-white font-semibold backdrop-blur-2xl
+    transform hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/25
+    transition-all duration-300 ease-in-out"
                         >
-                          <span className="fw-bold">
-                            Xem trên Solana Explorer
+                          <span className="flex items-center space-x-2">
+                            <span>Xem trên Solana Explorer</span>
+                            <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
                           </span>
                         </a>
 

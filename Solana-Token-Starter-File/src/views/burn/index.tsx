@@ -262,9 +262,15 @@ export const BurnView: FC<BurnViewProps> = ({ setOpenBurnModal }) => {
       </div>
       
       {!burnedTokenInfo.success ? (
-        <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
-          <div className="container">
-            <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
+        <section className="flex w-full items-center min-h-screen py-6 px-4 lg:p-10 bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+          <div className="container mx-auto relative">
+            {/* Background Effects */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute top-40 left-20 w-72 h-72 bg-pink-500/30 rounded-full filter blur-[100px]" />
+              <div className="absolute top-40 right-20 w-72 h-72 bg-blue-500/30 rounded-full filter blur-[100px]" />
+            </div>
+
+            <div className="bg-black/30 backdrop-blur-xl mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/10 shadow-2xl relative z-10">
               <div className="grid gap-10 lg:grid-cols-2">
                 <Branding
                   image="auth-img"
@@ -272,39 +278,55 @@ export const BurnView: FC<BurnViewProps> = ({ setOpenBurnModal }) => {
                   message="Đốt token để giảm tổng cung và tăng giá trị token của bạn"
                 />
                 <div className="lg:ps-0 flex h-full flex-col p-10">
-                  <div className="pb-10">
+                  <div className="pb-10 transform hover:scale-105 transition-all duration-300">
                     <a className="flex">
-                      <img src="assets/images/logo1.png" alt="logo" className="h-10" />
+                      <img src="assets/images/logo1.png" alt="logo" className="h-12" />
                     </a>
                   </div>
                   <div className="my-auto pb-6 text-center">
-                    <h4 className="mb-4 text-2xl font-bold text-white">
+                    <h4 className="mb-4 text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                       Đốt Token
                     </h4>
-                    <p className="text-default-300 mx-auto mb-5 max-w-sm">
+                    <p className="text-gray-300 mx-auto mb-8 max-w-sm">
                       Nhập địa chỉ token và số lượng token muốn đốt
                     </p>
-                    <div className="text-start">
-                      <InputView
-                        name="Địa chỉ Token"
-                        placeholder="Nhập địa chỉ token mint"
-                        clickhandle={(e) => handleInputChange("tokenMint", e.target.value)}
-                      />
-                      <InputView
-                        name="Số lượng"
-                        placeholder="Nhập số lượng token muốn đốt"
-                        clickhandle={(e) => handleInputChange("amount", e.target.value)}
-                      />
-                      <div className="mb-6 text-center">
+                    <div className="space-y-6">
+                      <div className="transform transition-all duration-300 hover:scale-[1.02]">
+                        <InputView
+                          name="Địa chỉ Token"
+                          placeholder="Nhập địa chỉ token mint"
+                          clickhandle={(e) => handleInputChange("tokenMint", e.target.value)}
+                        />
+                      </div>
+                      <div className="transform transition-all duration-300 hover:scale-[1.02]">
+                        <InputView
+                          name="Số lượng"
+                          placeholder="Nhập số lượng token muốn đốt"
+                          clickhandle={(e) => handleInputChange("amount", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-4">
                         <button
                           onClick={burnToken}
                           disabled={isLoading}
-                          className={`bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500 ${
-                            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
+                          className={`relative overflow-hidden bg-gradient-to-r from-purple-600 to-blue-600
+                            group w-full py-3 px-6 rounded-xl font-bold text-lg
+                            transition-all duration-300 transform
+                            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/25'}
+                            before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
+                            before:via-white/10 before:to-transparent before:translate-x-[-200%]
+                            hover:before:translate-x-[200%] before:transition-transform before:duration-700`}
                         >
-                          <span className="fw-bold">
-                            {isLoading ? "Đang xử lý..." : "Đốt Token"}
+                          <span className="relative z-10">
+                            {isLoading ? (
+                              <div className="flex items-center justify-center space-x-2">
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white/90 
+                                rounded-full animate-spin"/>
+                                <span>Đang xử lý...</span>
+                              </div>
+                            ) : (
+                              "Đốt Token"
+                            )}
                           </span>
                         </button>
                         <CloseModal />
@@ -317,9 +339,14 @@ export const BurnView: FC<BurnViewProps> = ({ setOpenBurnModal }) => {
           </div>
         </section>
       ) : (
-        <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
-          <div className="container">
-            <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
+        <section className="flex w-full items-center min-h-screen py-6 px-4 lg:p-10 bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+          <div className="container mx-auto relative">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute top-40 left-20 w-72 h-72 bg-green-500/30 rounded-full filter blur-[100px]" />
+              <div className="absolute top-40 right-20 w-72 h-72 bg-blue-500/30 rounded-full filter blur-[100px]" />
+            </div>
+
+            <div className="bg-black/30 backdrop-blur-xl mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/10 shadow-2xl relative z-10">
               <div className="grid gap-10 lg:grid-cols-2">
                 <Branding
                   image="auth-img"
@@ -329,69 +356,85 @@ export const BurnView: FC<BurnViewProps> = ({ setOpenBurnModal }) => {
 
                 <div className="lg:ps-0 flex h-full flex-col p-10">
                   <div className="my-auto pb-6 text-center">
-                    <h4 className="mb-8 text-2xl font-bold text-white">
+                    <h4 className="mb-8 text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
                       Thông tin Burn Token
                     </h4>
                     
-                    <div className="mb-8">
+                    <div className="mb-8 transform hover:scale-105 transition-all duration-500">
                       {burnedTokenInfo.tokenImage ? (
                         <img 
                           src={burnedTokenInfo.tokenImage} 
                           alt="token" 
-                          className="mx-auto h-32 w-32 object-contain rounded-full border-2 border-blue-500"
+                          className="mx-auto h-32 w-32 object-contain rounded-full 
+                            border-2 border-blue-500/50 transform hover:rotate-12
+                            transition-all duration-500 hover:shadow-lg
+                            hover:shadow-blue-500/30"
                         />
                       ) : (
-                        <div className="mx-auto h-32 w-32 rounded-full border-2 border-gray-500 flex items-center justify-center">
-                          <span className="text-default-300">Không có ảnh token</span>
+                        <div className="mx-auto h-32 w-32 rounded-full border-2 border-gray-500/50 
+                          flex items-center justify-center bg-gray-800/50 backdrop-blur-xl">
+                          <span className="text-gray-400">Không có ảnh token</span>
                         </div>
                       )}
                     </div>
 
-                    <div className="w-full text-center">
-                      <InputView
-                        name="Địa chỉ Token"
-                        placeholder={burnedTokenInfo.tokenMint}
-                      />
+                    <div className="w-full text-center space-y-6">
+                      <div className="transform hover:scale-[1.02] transition-all duration-300">
+                        <InputView
+                          name="Địa chỉ Token"
+                          placeholder={burnedTokenInfo.tokenMint}
+                        />
+                      </div>
+                      
                       {burnedTokenInfo.decimals === 0 ? (
-                        <p className="text-default-300 text-base font-medium leading-6 mt-4">
-                          <span>NFT đã được burn thành công</span>
-                        </p>
+                        <div className="bg-green-500/10 backdrop-blur-xl rounded-xl p-4 border border-green-500/20">
+                          <p className="text-green-400 text-lg font-medium">
+                            NFT đã được burn thành công
+                          </p>
+                        </div>
                       ) : (
-                        <>
-                          <p className="text-default-300 text-base font-medium leading-6 mt-4">
-                            <span>Số lượng đã đốt: {burnedTokenInfo.amount}</span>
-                          </p>
-                          <p className="text-default-300 text-base font-medium leading-6 mt-2">
-                            <span>Tổng cung hiện tại: {burnedTokenInfo.totalSupply.toLocaleString()}</span>
-                          </p>
-                        </>
+                        <div className="space-y-4">
+                          <div className="bg-blue-500/10 backdrop-blur-xl rounded-xl p-4 border border-blue-500/20">
+                            <p className="text-blue-400 text-lg font-medium">
+                              Số lượng đã đốt: {burnedTokenInfo.amount}
+                            </p>
+                          </div>
+                          <div className="bg-purple-500/10 backdrop-blur-xl rounded-xl p-4 border border-purple-500/20">
+                            <p className="text-purple-400 text-lg font-medium">
+                              Tổng cung hiện tại: {burnedTokenInfo.totalSupply.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
                       )}
 
-                      <div className="mb-6 text-center">
+                      <div className="space-y-4 pt-4">
                         <a
                           href={`https://explorer.solana.com/address/${burnedTokenInfo.tokenMint}?cluster=${networkConfiguration}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
+                          className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600
+                            group inline-flex w-full items-center justify-center rounded-xl px-6 py-3
+                            text-white font-bold text-lg transition-all duration-300 transform
+                            hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/25
+                            before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent 
+                            before:via-white/10 before:to-transparent before:translate-x-[-200%]
+                            hover:before:translate-x-[200%] before:transition-transform before:duration-700"
                         >
-                          <span className="fw-bold">
+                          <span className="relative z-10">
                             Xem trên Solana Explorer
                           </span>
                         </a>
-                      </div>
 
-                      <ul className="flex flex-wrap items-center justify-center gap-2">
-                        <li>
-                          <a
-                            onClick={() => setOpenBurnModal(false)}
-                            className="group inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-2xl transition-all duration-500 hover:bg-blue-600/60"
-                          >
-                            <i className="text-2xl text-white group-hover:text-white">
-                              <AiOutlineClose />
-                            </i>
-                          </a>
-                        </li>
-                      </ul>
+                        <button
+                          onClick={() => setOpenBurnModal(false)}
+                          className="w-full px-6 py-3 rounded-xl bg-white/5 backdrop-blur-xl
+                            border border-white/10 text-white font-bold
+                            transition-all duration-300 transform hover:scale-[1.02]
+                            hover:bg-white/10 hover:shadow-lg hover:shadow-white/5"
+                        >
+                          Đóng
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

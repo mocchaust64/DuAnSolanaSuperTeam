@@ -10,7 +10,7 @@ export const AppBar: FC = (props)=>{
   const menu =[
     {
       name:"Home",
-      link:"/#home",
+      link:"/",
     },
     {
       name:"Tools",
@@ -21,8 +21,8 @@ export const AppBar: FC = (props)=>{
       link:"/#features",
     },
     {
-      name:"Game NFT",
-      link:"/#gamenft",
+      name:"NFT Marketplace",
+      link:"/marketplace",
     },
     {
       name:"Price",

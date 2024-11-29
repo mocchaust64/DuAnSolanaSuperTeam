@@ -1,6 +1,7 @@
 import React, { useState} from "react";
 import type { NextPage } from "next";
 import Head from "next/head";
+import Link from 'next/link';
 
 //IMPORT INTERNAL
 
@@ -69,6 +70,9 @@ return(
  <OfferView/>
 <FaqView/>
 
+<Link href="/marketplace">
+  <button className="btn btn-primary">NFT Marketplace</button>
+</Link>
 
 {openCreateModal && (
   <div className="new_loader relative h-full bg-slate-900">

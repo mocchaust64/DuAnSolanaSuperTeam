@@ -28,6 +28,9 @@ interface CoinData {
     };
     market_cap_rank: number;
     symbol: string;
+    description: {
+        en: string;
+    };
 }
 
 const CoinDetail = () => {
@@ -38,6 +41,7 @@ const CoinDetail = () => {
     const [historicalData, setHistoricalData] = useState([]); // Dữ liệu lịch sử giá
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'increase' | 'decrease'>('all');
+    const [selectedPeriod, setSelectedPeriod] = useState('24h');
 
     useEffect(() => {
         if (id) {
@@ -92,124 +96,203 @@ const CoinDetail = () => {
         return matchesSearch && matchesFilter;
     }) : [];
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    const chartData: {
-        series: ApexAxisChartSeries;
-        options: ApexOptions;
-    } = {
-        series: [{
-            name: 'Giá',
-            data: historicalData
-        }],
-        options: {
-            chart: {
-                type: 'line' as const,
-                height: 350,
-                background: 'transparent',
-                toolbar: {
-                    show: false
+    const chartOptions: ApexOptions = {
+        chart: {
+            type: 'area',
+            zoom: {
+                enabled: true
+            },
+            toolbar: {
+                show: false
+            },
+            background: 'transparent',
+        },
+        colors: ['#3b82f6'], // Blue color
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2
+        },
+        grid: {
+            show: true,
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            strokeDashArray: 3,
+            position: 'back'
+        },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                style: {
+                    colors: '#9ca3af'
                 }
             },
-            xaxis: {
-                type: 'datetime' as const,
-                labels: {
-                    style: {
-                        colors: '#fff'
-                    }
+            axisBorder: {
+                show: false
+            },
+            axisTicks: {
+                show: false
+            }
+        },
+        yaxis: {
+            show: false // Hide y-axis labels
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'dark',
+            x: {
+                show: true,
+                format: 'dd MMM yyyy'
+            },
+            y: {
+                formatter: function(value: number) {
+                    return `$${value.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`
                 }
-            },
-            yaxis: {
-                labels: {
-                    style: {
-                        colors: '#fff'
-                    }
-                }
-            },
-            stroke: {
-                curve: 'smooth' as const,
-                width: 2
-            },
-            tooltip: {
-                theme: 'dark'
-            },
-            grid: {
-                borderColor: '#334155'
             }
         }
     };
 
+    const chartData = [{
+        name: 'Giá',
+        data: historicalData
+    }];
+
     return (
-        <>
-           <AppBar />
-           <div className="px-12 py-8 flex flex-col bg-gray-900 rounded-lg shadow-lg">
-               <div className='px-12'>
-                   <div className='px-12'>
-                       <div className='px-12'>
-                           <div className='px-12'>
-                               {/* Phần tiêu đề */}
-                               <div className="flex items-center mb-6">
-                                   <img className="w-24 h-24 mr-4 rounded-full border-2 border-blue-500" src={coinData?.image.large} alt={coinData?.name} />
-                                   <div>
-                                       <h1 className="text-4xl font-bold text-white">{coinData?.name} - {coinData?.symbol.toUpperCase()}</h1>
-                                       <p className="text-lg font-bold text-gray-300">Rank: {coinData?.market_cap_rank}</p>
-                                       <button className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">Thêm vào danh sách yêu thích</button>
-                                   </div>
-                               </div>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-900">
+            <AppBar />
+            
+            <div className="relative pt-20 pb-16 px-4">
+                {/* Background Effects */}
+                <div className="absolute top-0 left-0 w-full h-full">
+                    <div className="absolute top-40 left-20 w-72 h-72 bg-blue-500/30 rounded-full filter blur-[100px]" />
+                    <div className="absolute top-40 right-20 w-72 h-72 bg-purple-500/30 rounded-full filter blur-[100px]" />
+                </div>
 
-                               {/* Thông tin giá */}
-                               <div className="flex justify-between mb-6">
-                                   <p className="text-3xl font-bold text-white">Giá Hiện Tại: <span className="font-semibold text-yellow-400">${coinData?.market_data.current_price.usd}</span></p>
-                                   <p className="text-lg font-bold text-gray-300">Tăng/Giảm 24h: <span className={`font-semibold ${coinData?.market_data.price_change_percentage_24h < 0 ? 'text-red-500' : 'text-green-500'}`}>{coinData?.market_data.price_change_percentage_24h}%</span></p>
-                               </div>
+                <div className="max-w-7xl mx-auto relative z-10">
+                    {loading ? (
+                        <div className="flex items-center justify-center min-h-[60vh]">
+                            <div className="relative w-20 h-20">
+                                <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-500/30 rounded-full animate-ping" />
+                                <div className="absolute top-0 left-0 w-full h-full border-4 border-t-blue-500 rounded-full animate-spin" />
+                            </div>
+                        </div>
+                    ) : coinData && (
+                        <>
+                            {/* Hero Section */}
+                            <div className="mb-12 text-center">
+                                <div className="flex items-center justify-center gap-4 mb-6">
+                                    <img 
+                                        src={coinData.image.large} 
+                                        alt={coinData.name}
+                                        className="w-20 h-20 rounded-full shadow-lg transform hover:scale-110 transition-transform duration-300"
+                                    />
+                                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                        {coinData.name}
+                                    </h1>
+                                </div>
+                                
+                                <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10">
+                                    <span className="text-gray-400 mr-2">Rank #{coinData.market_cap_rank}</span>
+                                    <span className="text-blue-400 font-medium">{coinData.symbol.toUpperCase()}</span>
+                                </div>
+                            </div>
 
-                               {/* Biểu đồ giá */}
-                               <div className="flex-1 border border-gray-600 p-4 rounded-lg bg-gray-800 shadow-md mb-6">
-                                   {typeof window !== 'undefined' && (
-                                       <Chart 
-                                           options={chartData.options}
-                                           series={chartData.series}
-                                           type="line"
-                                           height={350}
-                                       />
-                                   )}
-                                   {/* Bộ lọc thời gian cho biểu đồ */}
-                                   <div className="flex justify-center mt-2">
-                                       <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">1 ngày</button>
-                                       <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">7 ngày</button>
-                                       <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">1 tháng</button>
-                                       <button className="mx-2 px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition duration-300">1 năm</button>
-                                   </div>
-                               </div>
+                            {/* Price Info Card */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                                {[
+                                    {
+                                        label: 'Current Price',
+                                        value: `$${coinData.market_data.current_price.usd.toLocaleString()}`,
+                                        change: coinData.market_data.price_change_percentage_24h,
+                                    },
+                                    {
+                                        label: 'Market Cap',
+                                        value: `$${coinData.market_data.market_cap.usd.toLocaleString()}`,
+                                    },
+                                    {
+                                        label: '24h Volume',
+                                        value: `$${coinData.market_data.total_volume.usd.toLocaleString()}`,
+                                    },
+                                    {
+                                        label: 'Circulating Supply',
+                                        value: `${coinData.market_data.circulating_supply.toLocaleString()} ${coinData.symbol.toUpperCase()}`,
+                                    },
+                                ].map((item, index) => (
+                                    <div key={index} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 
+                                        hover:border-blue-500/50 transition-all duration-300 group">
+                                        <h3 className="text-gray-400 mb-2">{item.label}</h3>
+                                        <div className="text-xl font-semibold text-white">
+                                            {item.value}
+                                            {item.change && (
+                                                <span className={`ml-2 text-sm ${
+                                                    item.change > 0 ? 'text-green-400' : 'text-red-400'
+                                                }`}>
+                                                    {item.change > 0 ? '↑' : '↓'} {Math.abs(item.change).toFixed(2)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
 
-                               {/* Thông tin chi tiết */}
-                               <div className="grid grid-cols-2 gap-6">
-                                   <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-                                       <p className="font-bold text-gray-300">Khối Lượng Giao Dịch 24h:</p>
-                                       <p className="font-semibold text-white">${coinData?.market_data.total_volume.usd}</p>
-                                   </div>
-                                   <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-                                       <p className="font-bold text-gray-300">Tổng Cung:</p>
-                                       <p className="font-semibold text-white">{coinData?.market_data.total_supply}</p>
-                                   </div>
-                                   <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-                                       <p className="font-bold text-gray-300">Lượng Cung Lưu Hành:</p>
-                                       <p className="font-semibold text-white">{coinData?.market_data.circulating_supply}</p>
-                                   </div>
-                                   <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-6">
-                                       <p className="font-bold text-gray-300">Tỷ Lệ Thay Đổi 24h:</p>
-                                       <p className="font-semibold text-white">{coinData?.market_data.price_change_percentage_24h}%</p>
-                                   </div>
-                               </div>
-                           </div>
-                       </div>
-                   </div>
-               </div>
-           </div>
-        </>
+                            {/* Chart Section */}
+                            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 mb-12">
+                                <div className="mb-6 flex justify-between items-center">
+                                    <h2 className="text-2xl font-bold text-white">Price Chart</h2>
+                                    <div className="flex gap-2">
+                                        {['24h', '7d', '30d', '1y'].map((period) => (
+                                            <button
+                                                key={period}
+                                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 
+                                                    ${selectedPeriod === period 
+                                                        ? 'bg-blue-500 text-white' 
+                                                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                                    }`}
+                                                onClick={() => setSelectedPeriod(period)}
+                                            >
+                                                {period}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div className="h-[400px]">
+                                    <Chart 
+                                        options={chartOptions}
+                                        series={chartData}
+                                        type="area"
+                                        height="100%"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Description Section */}
+                            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+                                <h2 className="text-2xl font-bold text-white mb-4">About {coinData.name}</h2>
+                                <div 
+                                    className="text-gray-300 prose prose-invert max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: coinData.description.en }}
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 
-export default CoinDetail; 
+export default CoinDetail;

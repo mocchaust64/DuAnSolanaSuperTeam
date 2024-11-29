@@ -1,0 +1,52 @@
+/* D:\SolanaProjects\DuanSolanaSuperTeam\nft-operations\Solana-Token-Starter-File\public\assets\css\style\marketplace.css */
+
+
+
+  
+  .marketplace-container {
+    min-height: calc(100vh - 80px);
+  }
+  
+  /* NFT Grid Styles */
+  .nft-grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  
+  /* NFT Card Styles */
+  .nft-card {
+    transition: transform 0.2s;
+  }
+  
+  .nft-card:hover {
+    transform: translateY(-4px);
+  }/* D:\SolanaProjects\DuanSolanaSuperTeam\nft-operations\Solana-Token-Starter-File\public\assets\css\style\marketplace.css */
+
+/* Smooth Scroll */
+html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Marketplace Specific Styles */
+  .marketplace-scroll-section {
+    scroll-margin-top: 7rem;
+  }
+  
+  .marketplace-container {
+    min-height: calc(100vh - 80px);
+  }
+  
+  /* NFT Grid Styles */
+  .nft-grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  
+  /* NFT Card Styles */
+  .nft-card {
+    transition: transform 0.2s;
+  }
+  
+  .nft-card:hover {
+    transform: translateY(-4px);
+  }

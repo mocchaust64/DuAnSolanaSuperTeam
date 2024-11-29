@@ -1,6 +1,6 @@
-import NotificationList from '../../components/Notification';
-import React, { useState } from 'react';
-import { AiOutlineClose } from 'react-icons/ai';
+import NotificationList from '../../components/Notification'
+import React, { useState } from 'react'
+import { AiOutlineClose } from 'react-icons/ai'
 
 const ThreeDImageGenerator = ({ setOpen3DImageGenerator }) => {
   const [objectType, setObjectType] = useState('');
@@ -65,108 +65,152 @@ const ThreeDImageGenerator = ({ setOpen3DImageGenerator }) => {
   return (
     <>
       <NotificationList />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 50 }}>
-        <div className="scrollable" style={{ backgroundColor: 'rgba(31, 41, 55, 0.4)', borderRadius: '1rem', padding: '2rem', maxWidth: '40rem', width: '100%', backdropFilter: 'blur(10px)', overflowY: 'auto', maxHeight: '100vh' }}>
-          <button onClick={() => setOpen3DImageGenerator(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', color: 'white' }}>
-            <AiOutlineClose size={24} />
+      {/* Backdrop với blur và gradient */}
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-900/30 via-gray-900/50 to-pink-900/30 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        {/* Main container */}
+        <div className="relative w-full max-w-2xl bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-2xl 
+          shadow-[0_0_40px_rgba(139,92,246,0.1)] border border-white/10 backdrop-blur-xl
+          transform transition-all duration-500 hover:shadow-[0_0_50px_rgba(139,92,246,0.2)]">
+          
+          {/* Close button */}
+          <button 
+            onClick={() => setOpen3DImageGenerator(false)}
+            className="absolute -top-2 -right-2 p-2 rounded-full bg-red-500/80 hover:bg-red-500 
+              transition-colors duration-300 group z-10"
+          >
+            <AiOutlineClose className="w-5 h-5 text-white transform group-hover:rotate-90 transition-transform duration-300" />
           </button>
-          <img 
-            src="/assets/images/logo1.png" // Đường dẫn đến logo
-            alt="Logo"
-            style={{ width: '50px', height: '50px', marginBottom: '1rem', display: 'block', marginLeft: '5px', marginRight: 'auto' }} // Điều chỉnh kích thước và căn giữa
-          />
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', textAlign: 'center', marginBottom: '1.5rem' }}>Tạo Ảnh 3D</h2>
-          <p style={{ color: 'white', textAlign: 'center', marginBottom: '1rem' }}>Vui lòng nhập thông tin chi tiết cho ảnh 3D của bạn.</p>
-          
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: 'white', marginBottom: '0.5rem' }}>Loại đối tượng:</label>
-            <input
-              type="text"
-              value={objectType}
-              onChange={(e) => setObjectType(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white' }}
-              placeholder="Nhập loại đối tượng"
-            />
-          </div>
-          
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: 'white', marginBottom: '0.5rem' }}>Phong cách thiết kế:</label>
-            <input
-              type="text"
-              value={designStyle}
-              onChange={(e) => setDesignStyle(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white' }}
-              placeholder="Nhập phong cách thiết kế"
-            />
-          </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: 'white', marginBottom: '0.5rem' }}>Màu sắc:</label>
-            <input
-              type="text"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white' }}
-              placeholder="Nhập màu sắc"
-            />
-          </div>
+          <div className="p-8 max-h-[90vh] overflow-y-auto">
+            {/* Header with animated gradient */}
+            <div className="text-center mb-12 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 
+                animate-gradient-x blur-2xl opacity-50" />
+              <img 
+                src="/assets/images/logo1.png"
+                alt="Logo"
+                className="w-16 h-16 mx-auto mb-6 transform hover:scale-110 transition-transform duration-300"
+              />
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 
+                bg-clip-text text-transparent mb-3">
+                Tạo Ảnh 3D
+              </h2>
+              <p className="text-gray-300 text-lg">
+                Khám phá khả năng sáng tạo với công nghệ AI
+              </p>
+            </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: 'white', marginBottom: '0.5rem' }}>Ánh sáng:</label>
-            <input
-              type="text"
-              value={lighting}
-              onChange={(e) => setLighting(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white' }}
-              placeholder="Nhập ánh sáng"
-            />
-          </div>
+            {/* Form with enhanced styling */}
+            <div className="space-y-8">
+              {[
+                { 
+                  label: 'Loại đối tượng', 
+                  value: objectType, 
+                  setter: setObjectType, 
+                  placeholder: 'Ex: CryptoPunk, Bored Ape, Digital Art Piece...' 
+                },
+                { 
+                  label: 'Phong cách thiết kế', 
+                  value: designStyle, 
+                  setter: setDesignStyle, 
+                  placeholder: 'Ex: Voxel Art, Pixel Art, Abstract Digital...' 
+                },
+                { 
+                  label: 'Màu sắc', 
+                  value: color, 
+                  setter: setColor, 
+                  placeholder: 'Ex: Crypto Blue, NFT Purple, Digital Gold...' 
+                },
+                { 
+                  label: 'Ánh sáng', 
+                  value: lighting, 
+                  setter: setLighting, 
+                  placeholder: 'Ex: Blockchain Glow, Metaverse Light, Digital Rays...' 
+                },
+                { 
+                  label: 'Hiệu ứng đặc biệt', 
+                  value: specialEffects, 
+                  setter: setSpecialEffects, 
+                  placeholder: 'Ex: Token Shine, Crypto Sparkle, NFT Hologram...' 
+                }
+              ].map((field, index) => (
+                <div key={index} className="group relative">
+                  <label className="block text-sm font-medium text-gray-300 mb-2 ml-1 transition-colors group-hover:text-purple-400">
+                    {field.label}
+                  </label>
+                  <input
+                    type="text"
+                    value={field.value}
+                    onChange={(e) => field.setter(e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full px-5 py-3 bg-gray-700/30 border border-white/10 rounded-xl
+                      text-white placeholder-gray-400/70
+                      focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20
+                      hover:bg-gray-700/40 transition-all duration-300"
+                  />
+                  <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-purple-500 to-pink-500 
+                    w-0 group-hover:w-full transition-all duration-500" />
+                </div>
+              ))}
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: 'white', marginBottom: '0.5rem' }}>Hiệu ứng đặc biệt:</label>
-            <input
-              type="text"
-              value={specialEffects}
-              onChange={(e) => setSpecialEffects(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.25rem', backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.2)', color: 'white' }}
-              placeholder="Nhập hiệu ứng đặc biệt"
-            />
+              {/* Generate button with animation */}
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={handleGenerateImage}
+                  disabled={loading}
+                  className="relative px-10 py-4 bg-gradient-to-r from-purple-600 to-pink-600 
+                    rounded-xl font-semibold text-white text-lg
+                    shadow-[0_0_20px_rgba(139,92,246,0.3)]
+                    hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]
+                    transform hover:scale-[1.02] active:scale-[0.98]
+                    transition-all duration-300 disabled:opacity-50 
+                    disabled:cursor-not-allowed disabled:hover:scale-100
+                    group overflow-hidden"
+                >
+                  <span className="relative z-10">
+                    {loading ? 'Đang tạo...' : 'Tạo ảnh 3D'}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
+                    translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                </button>
+              </div>
+
+              {/* Loading animation */}
+              {loading && (
+                <div className="flex items-center justify-center gap-3 text-white py-4">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="text-lg animate-pulse">Đang tạo ảnh tuyệt đẹp của bạn...</span>
+                </div>
+              )}
+
+              {/* Status message */}
+              {message && (
+                <div className={`p-5 rounded-xl text-center text-lg font-medium transform transition-all duration-300 
+                  ${messageType === 'success' 
+                    ? 'bg-green-500/20 text-green-300 shadow-[0_0_20px_rgba(34,197,94,0.2)]'
+                    : 'bg-red-500/20 text-red-300 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
+                  }`}>
+                  {message}
+                </div>
+              )}
+
+              {/* Preview image with enhanced animation */}
+              {previewImage && (
+                <div className="mt-8 rounded-xl overflow-hidden bg-gradient-to-b from-gray-700/30 to-gray-800/30 p-3
+                  transform hover:scale-[1.02] transition-all duration-500 group">
+                  <img 
+                    src={previewImage} 
+                    alt="Preview 3D" 
+                    className="w-full h-auto rounded-lg transform group-hover:scale-[1.02] transition-transform duration-500"
+                  />
+                </div>
+              )}
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-            <button
-              onClick={handleGenerateImage}
-              style={{
-                width: '30%',
-                backgroundColor: '#6B46C1',
-                color: 'white',
-                fontWeight: 'bold',
-                padding: '0.4rem',
-                borderRadius: '0.8rem',
-                transition: 'background-color 0.3s',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5A3EAB'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6B46C1'}
-            >
-              Tạo ảnh 3D
-            </button>
-          </div>
-          {loading && <p style={{ color: 'white', textAlign: 'center', marginTop: '1rem' }}>Đang tạo ảnh, vui lòng chờ...</p>}
-          {message && (
-            <p style={{ 
-              color: messageType === 'success' ? 'green' : 'red',
-              textAlign: 'center', 
-              marginTop: '1rem' 
-            }}>
-              {message}
-            </p>
-          )}
-          {previewImage && (
-            <img src={previewImage} alt="Preview 3D" style={{ marginTop: '1rem', width: '100%', height: 'auto', borderRadius: '0.5rem' }} />
-          )}
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default ThreeDImageGenerator;
+export default ThreeDImageGenerator

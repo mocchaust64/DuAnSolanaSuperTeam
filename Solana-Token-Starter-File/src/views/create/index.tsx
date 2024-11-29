@@ -26,7 +26,7 @@ import { notify } from "../../utils/notifications";
 import { ClipLoader } from "react-spinners";
 import { useNetworkConfiguration } from "@contexts/NetworkConfigurationProvider";
 import { AiOutlineClose } from "react-icons/ai";
-import CreateSVG from "../../components/SVG/CreateSVG";
+import CreateSVG from '@/components/SVG/CreateSVG';
 import { InputView } from "../input";
 import Branding from "../../components/Branding";
 import NotificationList from "../../components/Notification";
@@ -35,8 +35,8 @@ import { BN } from "@project-serum/anchor";
 import { TokenData } from '../../utils/token';
 
 // Environment variables
-const PINATA_API_KEY = "49d03dd184ece15831f8";
-const PINATA_SECRET_KEY = "1f57f4848817f0a46c3c75bcd41eddef3d1f461c3ee8f935b7a643cf64d6bcc8";
+const PINATA_API_KEY = "bb931179bd2f614252de";
+const PINATA_SECRET_KEY = "212e21d04c9998b7e21a4b74f0aac994ceefad203901e9e3c879aaa6c43269cc";
 
 
 interface CreateViewProps {
@@ -60,6 +60,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
     amount: "",
     decimals: 9,
   });
+  const [pinataFile, setPinataFile] = useState<File | null>(null);
 
   const handleFormFieldChange = (
     fieldName: keyof TokenData,
@@ -124,10 +125,12 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
     return true;
   };
 
-  const uploadImagePinata = async (file: File): Promise<string | null> => {
+  const uploadImagePinata = async (): Promise<string | null> => {
+    if (!pinataFile) return null;
+    
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', pinataFile);
       formData.append('pinataOptions', JSON.stringify({
         cidVersion: 0,
       }));
@@ -152,28 +155,92 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
     }
   };
 
-  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Add image processing function
+const processImage = async (file: File): Promise<{ 
+  displayFile: File, 
+  uploadFile: File 
+}> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Create canvases for both display and upload versions
+        const displayCanvas = document.createElement('canvas');
+        const uploadCanvas = document.createElement('canvas');
+
+        // Display version - fit into 400x400 maintaining aspect ratio
+        const maxDisplaySize = 400;
+        let displayWidth = img.width;
+        let displayHeight = img.height;
+        if (displayWidth > displayHeight) {
+          if (displayWidth > maxDisplaySize) {
+            displayHeight *= maxDisplaySize / displayWidth;
+            displayWidth = maxDisplaySize;
+          }
+        } else {
+          if (displayHeight > maxDisplaySize) {
+            displayWidth *= maxDisplaySize / displayHeight;
+            displayHeight = maxDisplaySize;
+          }
+        }
+
+        // Upload version - 800x800 for Pinata
+        const uploadSize = 800;
+        
+        // Set canvas sizes
+        displayCanvas.width = displayWidth;
+        displayCanvas.height = displayHeight;
+        uploadCanvas.width = uploadSize;
+        uploadCanvas.height = uploadSize;
+
+        // Draw images
+        const displayCtx = displayCanvas.getContext('2d');
+        const uploadCtx = uploadCanvas.getContext('2d');
+        
+        displayCtx?.drawImage(img, 0, 0, displayWidth, displayHeight);
+        uploadCtx?.drawImage(img, 0, 0, uploadSize, uploadSize);
+
+        // Convert to files
+        displayCanvas.toBlob((displayBlob) => {
+          uploadCanvas.toBlob((uploadBlob) => {
+            if (displayBlob && uploadBlob) {
+              resolve({
+                displayFile: new File([displayBlob], file.name, { type: 'image/png' }),
+                uploadFile: new File([uploadBlob], file.name, { type: 'image/png' })
+              });
+            }
+          }, 'image/png');
+        }, 'image/png');
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+// Update handleImageChange
+const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (file) {
     try {
-      const file = event.target.files?.[0];
-      if (!file) return;
+      const { displayFile, uploadFile } = await processImage(file);
+      
+      // Set preview image
+      setToken(prev => ({
+        ...prev,
+        image: URL.createObjectURL(displayFile)
+      }));
 
-      setIsLoading(true);
-
-      // Upload ảnh lên Pinata và lấy URL
-      const imageUrl = await uploadImagePinata(file);
-      if (imageUrl) {
-        setToken(prev => ({
-          ...prev,
-          image: imageUrl // Lưu URL thay vì base64
-        }));
-      }
+      // Save upload file for later use
+      setPinataFile(uploadFile);
+      
     } catch (error) {
-      console.error("Lỗi xử lý ảnh:", error);
-      notify({ type: "error", message: "Xử lý ảnh thất bại" });
-    } finally {
-      setIsLoading(false);
+      console.error('Error processing image:', error);
+      notify({ type: 'error', message: 'Error processing image' });
     }
-  };
+  }
+};
 
   const uploadMetadata = async (token: TokenData): Promise<string> => {
     try {
@@ -391,98 +458,189 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
       </div>
 
       {isLoading && (
-        <div className="absolute top-0 left-0 z-50 flex h-screen w-full items-center justify-center bg-black/[.3] backdrop-blur-[10px]">
-          <ClipLoader />
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+            <div className="mt-4 text-white font-medium">Đang Tạo Token...</div>
+          </div>
         </div>
       )}
+
       {!tokenMintAddress ? (
         <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
           <div className="container">
-            <div className="bg-default-950/40 mx-auto max-w-5xl overflow-hidden rounded-2xl backdrop-blur-2xl">
+            {/* Header Section */}
+            <div className="text-center mb-10">
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <img 
+                  src="/assets/images/logo1.png"
+                  alt="Logo"
+                  className="h-16 w-16 transform hover:scale-110 transition-transform duration-300"
+                />
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 
+                  bg-clip-text text-transparent">
+                  Tạo Token Của Bạn
+                </h2>
+              </div>
+              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                Phát hành token của riêng bạn trên blockchain Solana chỉ với vài cú nhấp chuột
+              </p>
+            </div>
+
+            {/* Main Content */}
+            <div className="bg-gradient-to-br from-gray-900/80 to-black/80 mx-auto max-w-5xl overflow-hidden rounded-2xl 
+              backdrop-blur-xl border border-white/10 shadow-[0_0_40px_rgba(120,119,198,0.1)]">
               <div className="grid gap-10 lg:grid-cols-2">
-                <div className="ps-4 hidden py-4 pt-10 lg:block">
-                  <div className="upload relative w-full overflow-hidden rounded-xl">
+                {/* Left Column */}
+                <div className="relative p-8 lg:p-10 bg-gradient-to-br from-purple-500/5 to-blue-500/5">
+                  <div className="absolute inset-0 bg-grid-white/[0.02]" />
+                  
+                  <h3 className="relative text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 
+                    bg-clip-text text-transparent mb-6">
+                    Tạo Token Solana
+                  </h3>
+                  
+                  <p className="relative text-gray-400 mb-8">
+                    Phát hành token của riêng bạn trên blockchain Solana với thương hiệu và thông số tùy chỉnh
+                  </p>
+
+                  <div className="upload relative w-full aspect-square max-w-md mx-auto rounded-2xl 
+                    bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-4 
+                    border border-white/10 hover:border-purple-500/30 transition-all duration-300">
                     {token.image ? (
-                      <img src={token.image} alt="token" className="w-2/5" />
+                      <div className="relative group h-full flex items-center justify-center">
+                        <img 
+                          src={token.image} 
+                          alt="token" 
+                          className="max-w-[200px] max-h-[200px] w-auto h-auto object-contain rounded-xl 
+                            transform transition-transform duration-300 group-hover:scale-[1.02]" 
+                        />
+                        <button
+                          onClick={() => setToken({...token, image: ""})}
+                          className="absolute top-3 right-3 p-2.5 rounded-full 
+                            bg-red-500/80 hover:bg-red-500 
+                            transition-all duration-300 
+                            opacity-0 group-hover:opacity-100
+                            transform group-hover:scale-110"
+                        >
+                          <AiOutlineClose className="w-5 h-5 text-white" />
+                        </button>
+                      </div>
                     ) : (
-                      <label htmlFor="file" className="custum-file-upload">
-                        <div className="icon">
-                          <CreateSVG />
+                      <label 
+                        htmlFor="file" 
+                        className="flex flex-col items-center justify-center h-full
+                          cursor-pointer rounded-xl border-2 border-dashed border-gray-600
+                          hover:border-purple-500/50 transition-all duration-300
+                          group"
+                      >
+                        <div className="text-center p-8">
+                          <CreateSVG className="w-20 h-20 mx-auto mb-6 text-purple-500/40 
+                            group-hover:text-purple-500/60 transition-colors duration-300" />
+                          <h3 className="text-lg font-semibold text-white/80 mb-2">
+                            Tải Lên Hình Ảnh Token
+                          </h3>
+                          <p className="text-gray-400 text-sm mb-1">
+                            Nhấp hoặc kéo hình ảnh để tải lên
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            SVG, PNG, JPG (tối đa 800x800px)
+                          </p>
                         </div>
-                        <div className="text">
-                          <span>Nhấn để tải lên hình ảnh</span>
-                        </div>
-                        <input type="file" id="file" onChange={handleImageChange} />
+                        <input 
+                          type="file" 
+                          id="file" 
+                          className="hidden" 
+                          onChange={handleImageChange}
+                          accept="image/*"
+                        />
                       </label>
                     )}
                   </div>
-
-                  <textarea
-                    rows={6}
-                    onChange={(e) => handleFormFieldChange("description", e)}
-                    className="border-default-200 relative mt-48 block w-full rounded border-white/10 bg-transparent py-1.5 px-3 text-white/80 focus:border-white/25 focus:ring-transparent"
-                    placeholder="Mô tả về token của bạn"
-                  ></textarea>
                 </div>
 
-                <div className="lg:ps-0 flex flex-col p-10" >
-                  <div className="pb-6 my-auto">
-                    <h4 className="mb-4 text-2xl font-bold text-white">
-                       Tạo Token Solana
-                    </h4>
-                    <p className="text-default-300 mb-8 max-w-sm">
-                      Vui lòng cung cấp tất cả thông tin về token của bạn
-                    </p>
-                    <div className="text-start">
-                      <InputView
-                        name="Tên"
-                        placeholder="tên"
-                        clickhandle={(e) => handleFormFieldChange("name", e)}
-                      />
-                      <InputView
-                        name="Ký hiệu"
-                        placeholder="ký hiệu"
-                        clickhandle={(e) => handleFormFieldChange("symbol", e)}
-                      />
-                      <InputView
-                        name="Số lượng"
-                        placeholder="số lượng"
-                        clickhandle={(e) => handleFormFieldChange("amount", e)}
-                      />
-                      <div className="mb-6 text-center">
-                        <button
-                          onClick={() => createToken(token)}
-                          className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
-                          type="submit"
-                        >
-                          <span className="fw-bold">Tạo Token</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                {/* Right Column */}
+                <div className="p-8 lg:p-10">
+  {/* Header with logo and close button */}
+  <div className="flex items-center justify-between mb-8">
+    <div className="flex items-center gap-4">
+      <img 
+        src="/assets/images/logo1.png"
+        alt="Logo"
+        className="h-12 w-12 transform hover:scale-110 transition-transform duration-300"
+      />
+      <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 
+        bg-clip-text text-transparent">
+        Create Solana Token
+      </h3>
+    </div>
+    
+    <button
+      onClick={() => setOpenCreateModal(false)}
+      className="p-2 rounded-full bg-white/10 hover:bg-red-500/20 
+        transition-colors duration-300 group"
+    >
+      <AiOutlineClose className="w-6 h-6 text-white/70 group-hover:text-red-500
+        transform group-hover:rotate-90 transition-all duration-300" />
+    </button>
+  </div>
 
-                  <div className="text-center">
-                    <ul className="flex flex-wrap items-center justify-center gap-2">
-                      <li>
-                        <a
-                          onClick={() => setOpenCreateModal(false)}
-                          className="group inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-2xl transition-all duration-500 hover:bg-blue-600/60"
-                        >
-                          <i className="text-2xl text-white group-hover:text-white">
-                            <AiOutlineClose />
-                          </i>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+  <div className="space-y-6">
+    <InputView
+      name="Tên Token"
+      placeholder="Nhập tên token"
+      clickhandle={(e) => handleFormFieldChange("name", e)}
+    />
+    <InputView
+      name="Ký Hiệu"
+      placeholder="Nhập ký hiệu token (ví dụ: SOL)"
+      clickhandle={(e) => handleFormFieldChange("symbol", e)}
+    />
+    <InputView
+      name="Tổng Cung"
+      placeholder="Nhập tổng cung"
+      clickhandle={(e) => handleFormFieldChange("amount", e)}
+    />
+
+    <textarea
+      rows={6}
+      onChange={(e) => handleFormFieldChange("description", e)}
+      className="w-full rounded-xl bg-white/5 border border-white/10 p-4
+        text-white placeholder-gray-500 focus:border-purple-500/50 focus:ring-2 
+        focus:ring-purple-500/20 transition-all duration-300"
+      placeholder="Mô tả token của bạn..."
+    />
+
+    <button
+      onClick={() => createToken(token)}
+      disabled={isLoading}
+      className="relative w-full py-4 rounded-xl font-bold text-lg
+        bg-gradient-to-r from-purple-600 to-blue-600
+        hover:from-purple-500 hover:to-blue-500
+        transform hover:scale-[1.02] active:scale-[0.98]
+        transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
+        text-white shadow-lg hover:shadow-purple-500/25"
+    >
+      Tạo Token
+    </button>
+
+    <div className="text-center pt-4">
+      <button
+        onClick={() => setOpenCreateModal(false)}
+        className="p-2 rounded-full bg-white/10 hover:bg-white/20 
+          transition-colors duration-300"
+      >
+        <AiOutlineClose className="w-6 h-6 text-white" />
+      </button>
+    </div>
+  </div>
+  {/* Token Creation Guide */}
+</div>
+
               </div>
             </div>
           </div>
-
         </section>
-
-
       ) : (
         <section className="flex w-full items-center py-6 px-0 lg:h-screen lg:p-10">
           <div className="container">
@@ -543,7 +701,7 @@ export const CreateView: FC<CreateViewProps> = ({ setOpenCreateModal }) => {
                           className="bg-primary-600/90 hover:bg-primary-600 group mt-5 inline-flex w-full items-center justify-center rounded-lg px-6 py-2 text-white backdrop-blur-2xl transition-all duration-500"
                         >
                           <span className="fw-bold">
-                            Xem trên Solana
+                            Xem Trên Solana Explorer
                           </span>
                         </a>
                       </div>
