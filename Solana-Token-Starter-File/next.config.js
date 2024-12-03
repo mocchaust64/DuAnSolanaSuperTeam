@@ -11,6 +11,9 @@ const nextConfig = {
   experimental: {
     esmExternals: false,
     pagesDir: 'src/pages'
+  },
+  images: {
+    domains: ['gateway.pinata.cloud'],
   }
 };
 

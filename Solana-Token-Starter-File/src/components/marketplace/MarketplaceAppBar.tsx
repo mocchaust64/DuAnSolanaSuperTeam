@@ -24,8 +24,16 @@ export const MarketplaceAppBar: FC = (props) => {
       link: "/marketplace/mint",
     },
     {
+      name: "Create Collection",
+      link: "/marketplace/collections/create",
+    },
+    {
       name: "My NFTs",
       link: "/marketplace/my-nfts", 
+    },
+    {
+      name: "Setup Marketplace",
+      link: "/marketplace/setup",
     },
     {
       name: "Faq",

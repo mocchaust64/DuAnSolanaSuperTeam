@@ -28,7 +28,6 @@ import { Metadata, PROGRAM_ID as METADATA_PROGRAM_ID, PROGRAM_ID } from '@metapl
 import { Connection } from '@solana/web3.js';
 import * as bs58 from 'bs58';
 
-
 const MINT_SIZE = 82;
 
 // Thêm interface NFTFormData
@@ -261,19 +260,23 @@ export const MintNFT: FC = () => {
 
   // Di chuyển fetchCollections vào đây
   const fetchCollections = useCallback(async () => {
-    if (!publicKey || isLoadingCollections) return;
+    // Kiểm tra nếu đã load thì không load lại
+    if (!publicKey || isLoadingCollections || hasLoadedCollections) return;
 
     try {
       setIsLoadingCollections(true);
-      console.log("Bắt đầu tìm collections...");
+      console.log("Bat dau tim collections...");
 
       const metadataAccounts = await connection.getProgramAccounts(
         TOKEN_METADATA_PROGRAM_ID,
         {
           filters: [
             {
+              dataSize: 607
+            },
+            {
               memcmp: {
-                offset: 326, // Offset cho creator address
+                offset: 326,
                 bytes: publicKey.toBase58()
               }
             }
@@ -281,43 +284,103 @@ export const MintNFT: FC = () => {
         }
       );
 
-      console.log(`Tìm thấy ${metadataAccounts.length} metadata accounts`);
+      console.log(`Tim thay ${metadataAccounts.length} metadata accounts`);
+
       const collectionNFTs: Collection[] = [];
 
       for (const account of metadataAccounts) {
         try {
           const metadata = await Metadata.fromAccountAddress(connection, account.pubkey);
           
-          // Log để debug
-          console.log("Checking metadata:", {
-            name: metadata.data.name.replace(/\0/g, ''),
+          // Lấy creators từ metadata trước
+          const creators = metadata.data.creators?.map(c => ({
+            address: c.address.toBase58(),
+            verified: c.verified,
+            share: c.share
+          })) || [];
+          
+          // Kiểm tra master edition
+          const [masterEditionPDA] = await PublicKey.findProgramAddress(
+            [
+              Buffer.from("metadata"),
+              TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+              metadata.mint.toBuffer(),
+              Buffer.from("edition"),
+            ],
+            TOKEN_METADATA_PROGRAM_ID
+          );
+          
+          const masterEditionAccount = await connection.getAccountInfo(masterEditionPDA);
+
+          console.log("Checking NFT conditions for", metadata.data.name.replace(/\0/g, ''), {
+            mint: metadata.mint.toBase58(),
+            hasCollectionDetails: metadata.collectionDetails?.__kind === 'V1',
+            hasNoCollection: !metadata.collection,
+            hasMasterEdition: masterEditionAccount !== null,
+            isUpdateAuthority: metadata.updateAuthority.toBase58() === publicKey.toBase58(),
             updateAuthority: metadata.updateAuthority.toBase58(),
-            wallet: publicKey.toBase58(),
-            isCollection: metadata.collectionDetails?.__kind === 'V1',
-            creators: metadata.data.creators?.map(c => ({
-              address: c.address.toBase58(),
-              share: c.share
+            currentWallet: publicKey.toBase58(),
+            creators: creators.map(c => ({
+              address: c.address,
+              share: c.share,
+              verified: c.verified
             }))
           });
 
-          // Kiểm tra điều kiện collection
-          if (metadata.collectionDetails?.__kind === 'V1') {
+          // Kiểm tra từng điều kiện riêng biệt
+          const isCollectionV1 = metadata.collectionDetails?.__kind === 'V1';
+          const hasNoCollection = !metadata.collection;
+          const hasMasterEdition = masterEditionAccount !== null;
+          const isCorrectAuthority = metadata.updateAuthority.toBase58() === publicKey.toBase58();
+
+          // Kiểm tra creator riêng
+          const hasValidCreator = creators.some(creator => {
+            const isWalletCreator = creator.address === publicKey.toBase58();
+            const hasFullShare = creator.share === 100;
+            
+            console.log("Creator check for", metadata.data.name.replace(/\0/g, ''), {
+              creatorAddress: creator.address,
+              walletAddress: publicKey.toBase58(),
+              isWalletCreator,
+              hasFullShare,
+              share: creator.share,
+              verified: creator.verified
+            });
+            
+            return isWalletCreator && hasFullShare;
+          });
+
+          // Log tất cả điều kiện
+          console.log("All conditions for", metadata.data.name.replace(/\0/g, ''), {
+            isCollectionV1,
+            hasNoCollection,
+            hasMasterEdition,
+            isCorrectAuthority,
+            hasValidCreator
+          });
+
+          if (
+            isCollectionV1 &&
+            hasNoCollection &&
+            hasMasterEdition &&
+            isCorrectAuthority &&
+            hasValidCreator
+          ) {
             collectionNFTs.push({
               mint: metadata.mint.toBase58(),
               name: metadata.data.name.replace(/\0/g, ''),
               symbol: metadata.data.symbol.replace(/\0/g, ''),
               uri: metadata.data.uri.replace(/\0/g, ''),
-              creators: metadata.data.creators?.map(c => ({
-                address: c.address.toBase58(),
-                verified: c.verified,
-                share: c.share
-              })) || []
+              creators
             });
             
-            console.log("Added collection:", metadata.data.name.replace(/\0/g, ''));
+            console.log("Added collection successfully:", {
+              name: metadata.data.name.replace(/\0/g, ''),
+              mint: metadata.mint.toBase58()
+            });
           }
         } catch (err) {
-          console.error("Error processing metadata:", err);
+          console.log("Error checking metadata:", err);
           continue;
         }
       }
@@ -325,6 +388,8 @@ export const MintNFT: FC = () => {
       console.log("Found collections:", collectionNFTs);
       setCollections(collectionNFTs);
       
+      // Lưu trạng thái đã load
+      setHasLoadedCollections(true);
       localStorage.setItem('nft_collections_loaded', 'true');
       localStorage.setItem('nft_collections', JSON.stringify(collectionNFTs));
 
@@ -338,7 +403,7 @@ export const MintNFT: FC = () => {
     } finally {
       setIsLoadingCollections(false);
     }
-  }, [connection, publicKey, isLoadingCollections]);
+  }, [connection, publicKey, isLoadingCollections, hasLoadedCollections]);
 
   // Di chuyển useEffect vào đây
   useEffect(() => {
@@ -430,16 +495,16 @@ export const MintNFT: FC = () => {
       const createMintAccountIx = SystemProgram.createAccount({
         fromPubkey: publicKey,
         newAccountPubkey: mintKeypair.publicKey,
-        space: MINT_SIZE,
-        lamports: await connection.getMinimumBalanceForRentExemption(MINT_SIZE),
+        space: 82,
+        lamports: await connection.getMinimumBalanceForRentExemption(82),
         programId: TOKEN_PROGRAM_ID
       });
 
       const initializeMintIx = createInitializeMintInstruction(
         mintKeypair.publicKey,
         0,
-        publicKey, // Owner là mint authority
-        publicKey  // Owner là freeze authority
+        mintAuthorityPDA,
+        mintAuthorityPDA
       );
 
       const createAtaIx = createAssociatedTokenAccountInstruction(
@@ -458,14 +523,14 @@ export const MintNFT: FC = () => {
           sellerFeeBasisPoints: 500,
           creators: [{
             address: publicKey,
-            verified: true,
+            verified: false,
             share: 100
           }]
         })
         .accounts({
           owner: publicKey,
           mint: mintKeypair.publicKey,
-          mintAuthority: publicKey, // Owner là mint authority
+          mintAuthority: mintAuthorityPDA,
           metadata: metadataPDA,
           masterEdition: masterEditionPDA,
           destination: destinationAta,
@@ -477,6 +542,7 @@ export const MintNFT: FC = () => {
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
+          sysvarInstruction: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY
         })
         .instruction();
 
@@ -499,30 +565,7 @@ export const MintNFT: FC = () => {
       const txId = await connection.sendRawTransaction(signedTx.serialize());
       await connection.confirmTransaction(txId, 'confirmed');
 
-      // Thêm verification ở đây
-      const verifyMintAccount = async (mintPubkey: PublicKey) => {
-        try {
-          const mintInfo = await getMint(connection, mintPubkey);
-          
-          // Kiểm tra các điều kiện cần thiết
-          if (mintInfo.decimals !== 0) throw new Error("Invalid decimals");
-          if (mintInfo.supply !== BigInt(1)) throw new Error("Invalid supply");
-          if (!mintInfo.isInitialized) throw new Error("Mint not initialized");
-          
-          return true;
-        } catch (error) {
-          console.error("Mint verification failed:", error);
-          return false;
-        }
-      };
-
-      // Verify mint account
-      const isMintValid = await verifyMintAccount(mintKeypair.publicKey);
-      if (!isMintValid) {
-        throw new Error("NFT mint không hợp lệ cho listing");
-      }
-
-      // Sau khi verify thành công, tiếp tục với phần còn lại
+      // Sau khi mint thành công, lấy metadata của NFT
       const mintedMetadata = await Metadata.fromAccountAddress(
         connection,
         await getMetadata(mintKeypair.publicKey)
@@ -581,6 +624,7 @@ export const MintNFT: FC = () => {
               sysvarInstruction: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
             })
             .instruction();
+
           console.log("Verify instruction created with accounts:", {
             authority: publicKey.toString(),
             metadata: nftMetadataPDA.toString(),
@@ -627,161 +671,6 @@ export const MintNFT: FC = () => {
         }
       }
 
-      // Kiểm tra trạng thái sau khi mint
-      const mintStatus = await checkMintStatus(mintKeypair.publicKey, publicKey);
-      console.log("Mint status:", mintStatus);
-
-      if (!mintStatus.isInitialized || !mintStatus.hasCorrectBalance || !mintStatus.hasMetadata) {
-        throw new Error("NFT mint không thành công hoặc không đầy đủ");
-      }
-
-      // 1. Kiểm tra quyền sở hữu token account
-      const verifyTokenAccount = async (
-        mintPubkey: PublicKey,
-        ownerPubkey: PublicKey
-      ) => {
-        try {
-          const tokenAccount = getAssociatedTokenAddressSync(mintPubkey, ownerPubkey);
-          const tokenAccountInfo = await getAccount(connection, tokenAccount);
-          
-          console.log("\n=== Token Account Verification ===");
-          console.log("Token Account:", tokenAccount.toBase58());
-          console.log("Owner:", tokenAccountInfo.owner.toBase58());
-          console.log("Mint:", tokenAccountInfo.mint.toBase58());
-          console.log("Amount:", tokenAccountInfo.amount.toString());
-          
-          // Kiểm tra các điều kiện
-          if (tokenAccountInfo.owner.toBase58() !== ownerPubkey.toBase58()) {
-            throw new Error("Token account owner mismatch");
-          }
-          if (tokenAccountInfo.mint.toBase58() !== mintPubkey.toBase58()) {
-            throw new Error("Token account mint mismatch");
-          }
-          if (tokenAccountInfo.amount !== BigInt(1)) {
-            throw new Error("Token account amount should be 1");
-          }
-          
-          return true;
-        } catch (error) {
-          console.error("Token account verification failed:", error);
-          return false;
-        }
-      };
-
-      // 2. Kiểm tra Metadata PDA
-      const verifyMetadataPDA = async (mintPubkey: PublicKey) => {
-        try {
-          const metadataPDA = await getMetadata(mintPubkey);
-          const metadata = await Metadata.fromAccountAddress(connection, metadataPDA);
-          
-          console.log("\n=== Metadata PDA Verification ===");
-          console.log("Metadata Address:", metadataPDA.toBase58());
-          console.log("Update Authority:", metadata.updateAuthority.toBase58());
-          console.log("Mint:", metadata.mint.toBase58());
-          console.log("Name:", metadata.data.name);
-          console.log("Symbol:", metadata.data.symbol);
-          console.log("URI:", metadata.data.uri);
-          console.log("Creators:", metadata.data.creators?.map(c => ({
-            address: c.address.toBase58(),
-            verified: c.verified,
-            share: c.share
-          })));
-          
-          // Kiểm tra các điều kiện
-          if (metadata.mint.toBase58() !== mintPubkey.toBase58()) {
-            throw new Error("Metadata mint mismatch");
-          }
-          if (!metadata.data.name) {
-            throw new Error("Missing name in metadata");
-          }
-          if (!metadata.data.symbol) {
-            throw new Error("Missing symbol in metadata");
-          }
-          if (!metadata.data.uri) {
-            throw new Error("Missing uri in metadata");
-          }
-          
-          return true;
-        } catch (error) {
-          console.error("Metadata PDA verification failed:", error);
-          return false;
-        }
-      };
-
-      // 3. Kiểm tra Collection
-      const verifyCollection = async (
-        mintPubkey: PublicKey,
-        collectionMint: PublicKey
-      ) => {
-        try {
-          const metadataPDA = await getMetadata(mintPubkey);
-          const metadata = await Metadata.fromAccountAddress(connection, metadataPDA);
-          
-          console.log("\n=== Collection Verification ===");
-          console.log("Collection Key:", metadata.collection?.key.toBase58());
-          console.log("Collection Verified:", metadata.collection?.verified);
-          
-          // Kiểm tra các điều kiện
-          if (!metadata.collection) {
-            throw new Error("NFT không thuộc collection nào");
-          }
-          if (metadata.collection.key.toBase58() !== collectionMint.toBase58()) {
-            throw new Error("Collection mint mismatch");
-          }
-          if (!metadata.collection.verified) {
-            throw new Error("Collection chưa được verify");
-          }
-          
-          return true;
-        } catch (error) {
-          console.error("Collection verification failed:", error);
-          return false;
-        }
-      };
-
-      // Thêm vào trong hàm handleMint sau khi mint thành công
-      const verifyAllAccounts = async () => {
-        console.log("\n=== Starting Full Verification ===");
-        
-        // 1. Verify mint account
-        const isMintValid = await verifyMintAccount(mintKeypair.publicKey);
-        if (!isMintValid) {
-          throw new Error("NFT mint không hợp lệ");
-        }
-        
-        // 2. Verify token account
-        const isTokenAccountValid = await verifyTokenAccount(
-          mintKeypair.publicKey,
-          publicKey
-        );
-        if (!isTokenAccountValid) {
-          throw new Error("Token account không hợp lệ");
-        }
-        
-        // 3. Verify metadata
-        const isMetadataValid = await verifyMetadataPDA(mintKeypair.publicKey);
-        if (!isMetadataValid) {
-          throw new Error("Metadata không hợp lệ");
-        }
-        
-        // 4. Verify collection nếu có
-        if (selectedCollection) {
-          const isCollectionValid = await verifyCollection(
-            mintKeypair.publicKey,
-            new PublicKey(selectedCollection)
-          );
-          if (!isCollectionValid) {
-            throw new Error("Collection verification thất bại");
-          }
-        }
-        
-        console.log("\n=== All Verifications Passed ===");
-        return true;
-      };
-
-      // Verify tất cả accounts
-      await verifyAllAccounts();
-
     } catch (error: any) {
       console.error('Error minting NFT:', error);
       notify({ 
@@ -791,47 +680,6 @@ export const MintNFT: FC = () => {
       });
     } finally {
       setUploading(false);
-    }
-  };
-
-  const checkMintStatus = async (mintPubkey: PublicKey, ownerPubkey: PublicKey) => {
-    try {
-      // Kiểm tra mint account
-      const mintInfo = await getMint(connection, mintPubkey);
-      console.log("=== Mint Account Info ===");
-      console.log("Mint pubkey:", mintPubkey.toBase58());
-      console.log("Mint authority:", mintInfo.mintAuthority?.toBase58());
-      console.log("Supply:", mintInfo.supply);
-      console.log("Decimals:", mintInfo.decimals);
-      
-      // Kiểm tra token account
-      const tokenAccount = getAssociatedTokenAddressSync(mintPubkey, ownerPubkey);
-      const tokenAccountInfo = await getAccount(connection, tokenAccount);
-      console.log("\n=== Token Account Info ===");
-      console.log("Token account:", tokenAccount.toBase58());
-      console.log("Owner:", tokenAccountInfo.owner.toBase58());
-      console.log("Amount:", tokenAccountInfo.amount);
-      
-      // Kiểm tra metadata
-      const metadataPDA = await getMetadata(mintPubkey);
-      const metadata = await Metadata.fromAccountAddress(connection, metadataPDA);
-      console.log("\n=== Metadata Info ===");
-      console.log("Name:", metadata.data.name);
-      console.log("Symbol:", metadata.data.symbol);
-      console.log("URI:", metadata.data.uri);
-      
-      return {
-        isInitialized: mintInfo.supply > BigInt(0),
-        hasCorrectBalance: tokenAccountInfo.amount === BigInt(1),
-        hasMetadata: true
-      };
-    } catch (error) {
-      console.error("Error checking mint status:", error);
-      return {
-        isInitialized: false,
-        hasCorrectBalance: false,
-        hasMetadata: false
-      };
     }
   };
 
@@ -863,13 +711,7 @@ export const MintNFT: FC = () => {
                 ))}
               </select>
               <button 
-                onClick={() => {
-                  console.log("Refreshing collections...");
-                  // Reset state và gọi fetchCollections
-                  setHasLoadedCollections(false);
-                  localStorage.removeItem('nft_collections_loaded');
-                  fetchCollections();
-                }}
+                onClick={fetchCollections}
                 disabled={isLoadingCollections}
                 className={`px-4 py-2 rounded-md font-semibold flex items-center gap-2 ${
                   isLoadingCollections 
