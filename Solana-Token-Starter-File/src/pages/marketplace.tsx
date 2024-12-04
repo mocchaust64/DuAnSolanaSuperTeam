@@ -10,6 +10,7 @@ import {} from '@/components/marketplace/MintNFT'
 
 
 
+
 const Marketplace: FC = () => {
   const { publicKey } = useWallet();
   const [openMintModal, setOpenMintModal] = useState(false);
@@ -20,6 +21,7 @@ const Marketplace: FC = () => {
       <CreateNFTSection setOpenMintModal={setOpenMintModal} />
       
       <div className="container mx-auto px-4"> {/* Removed id="browse-nfts" and scroll-mt-28 */}
+      
         {publicKey ? (
           <BrowseNFT />
         ) : (

@@ -40,6 +40,7 @@ interface NFTMetadataUpload {
     trait_type: string;
     value: string;
   }[];
+
 }
 
 export async function uploadNFTMetadata(metadata: NFTMetadataUpload) {
@@ -51,6 +52,7 @@ export async function uploadNFTMetadata(metadata: NFTMetadataUpload) {
     description,
     image,
     attributes,
+    
     properties: {
       files: [
         {
@@ -60,6 +62,9 @@ export async function uploadNFTMetadata(metadata: NFTMetadataUpload) {
       ],
       category: "image"
     }
+    
+    
+
   };
 
   try {

@@ -37,15 +37,21 @@ interface NFTFormData {
   symbol: string;
   description: string;
   attributes: { trait_type: string; value: string }[];
+  royalty: number;
+  
 }
 
 // Thêm interface NFTMetadata để match với pinataUploader
-interface NFTMetadata {
+interface NFTMetadataUpload {
   name: string;
   symbol: string;
   description: string;
   image: string;
-  attributes: { trait_type: string; value: string }[];
+  attributes?: {
+    trait_type: string;
+    value: string;
+  }[]
+  ;
 }
 
 // Đổi tên interface để tránh xung đột
@@ -234,6 +240,7 @@ export const MintNFT: FC = () => {
     description: '',
     image: null as File | null,
     attributes: [] as { trait_type: string; value: string }[],
+    royalty: 0
   });
 
   const [preview, setPreview] = useState<{
@@ -385,6 +392,10 @@ export const MintNFT: FC = () => {
         setErrors(prev => ({...prev, image: 'Image is required'}));
         return;
       }
+      if (formData.royalty < 0 || formData.royalty > 100) {
+        setErrors((prev) => ({ ...prev, royalty: 'Royalty must be between 0 and 100' }));
+        return;
+      }
 
       // Upload image first
       const imageUrl = await handleImageUpload(formData.image);
@@ -395,7 +406,9 @@ export const MintNFT: FC = () => {
         symbol: formData.symbol,
         description: formData.description,
         image: imageUrl,
-        attributes: formData.attributes
+        attributes: formData.attributes,
+        
+       
       });
 
       console.log("Metadata uploaded:", metadataUrl);
@@ -455,7 +468,7 @@ export const MintNFT: FC = () => {
           name: formData.name,
           symbol: formData.symbol,
           uri: metadataUrl,
-          sellerFeeBasisPoints: 500,
+          sellerFeeBasisPoints: formData.royalty *100,
           creators: [{
             address: publicKey,
             verified: true,
@@ -732,6 +745,7 @@ export const MintNFT: FC = () => {
             throw new Error("Collection chưa được verify");
           }
           
+          
           return true;
         } catch (error) {
           console.error("Collection verification failed:", error);
@@ -918,6 +932,15 @@ export const MintNFT: FC = () => {
                 rows={4}
                 placeholder="Description"
               />
+               
+               <label htmlFor="royalty">Royalty</label>
+        <input
+          type="number"
+          id="royalty"
+           className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
+          value={formData.royalty}
+          onChange={(e) => setFormData({ ...formData, royalty: parseFloat(e.target.value) })}
+        />
             </div>
           </div>
 
@@ -950,6 +973,44 @@ export const MintNFT: FC = () => {
               />
             </div>
           </div>
+          <div>
+        <label htmlFor="trait_type">Trait Type</label>
+        <input
+          type="text"
+          id="trait_type"
+          className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
+
+          value={formData.attributes[0]?.trait_type || ''}
+          onChange={(e) => {
+            const newAttributes = [...formData.attributes];
+            if (newAttributes[0]) {
+              newAttributes[0].trait_type = e.target.value;
+            } else {
+              newAttributes.push({ trait_type: e.target.value, value: '' });
+            }
+            setFormData({ ...formData, attributes: newAttributes });
+          }}
+        />
+      </div>
+      <div>
+        <label htmlFor="value">Value</label>
+        <input
+          type="text"
+          id="value"
+          className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
+
+          value={formData.attributes[0]?.value || ''}
+          onChange={(e) => {
+            const newAttributes = [...formData.attributes];
+            if (newAttributes[0]) {
+              newAttributes[0].value = e.target.value;
+            } else {
+              newAttributes.push({ trait_type: '', value: e.target.value });
+            }
+            setFormData({ ...formData, attributes: newAttributes });
+          }}
+        />
+      </div>
 
           {/* Mint Button */}
           <button
@@ -1010,6 +1071,7 @@ export const MintNFT: FC = () => {
                     {preview.description || formData.description || 'No description'}
                   </p>
                 </div>
+                
               </div>
             </div>
           </div>

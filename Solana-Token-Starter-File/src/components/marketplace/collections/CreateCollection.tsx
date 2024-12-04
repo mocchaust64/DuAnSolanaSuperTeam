@@ -10,6 +10,8 @@ import {
   TransactionMessage,
   Commitment
 } from '@solana/web3.js';
+
+import{MarketplaceAppBar} from "../MarketplaceAppBar"
 import { 
   TOKEN_PROGRAM_ID, 
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -34,14 +36,12 @@ interface CollectionFormData {
   sellerFeeBasisPoints: number;
 }
 
-// Thêm interface cho Creator
 interface Creator {
   address: PublicKey;
   verified: boolean;
   share: number;
 }
 
-// Sửa lại interface NFTMetadata để khớp với IDL
 interface NFTMetadata {
   name: string;
   symbol: string;
@@ -75,7 +75,6 @@ interface PinataMetadata {
   properties: NFTMetadataProperties;
 }
 
-// Định nghĩa interface cho errors
 interface FormErrors {
   [key: string]: string | undefined;
 }
@@ -101,7 +100,6 @@ export const CreateCollection: FC = () => {
   ) => {
     const { name, value } = e.target;
 
-    // Clear error
     setErrors(prev => ({
       ...prev,
       [name]: undefined
@@ -119,7 +117,6 @@ export const CreateCollection: FC = () => {
       setFormData(prev => ({ ...prev, image: file }));
     } 
     else if (name === 'sellerFeeBasisPoints') {
-      // Chuyển đổi từ % sang basis points (1% = 100 basis points)
       const percentage = parseFloat(value) || 0;
       if (percentage >= 0 && percentage <= 100) {
         const basisPoints = Math.round(percentage * 100);
@@ -147,13 +144,7 @@ export const CreateCollection: FC = () => {
         return;
       }
 
-      // Upload image to IPFS
-      console.log("Uploading image...");
       const imageUrl = await uploadImageToIPFS(formData.image, formData.name);
-      console.log("Image uploaded:", imageUrl);
-
-      // Upload metadata to IPFS
-      console.log("Creating metadata...");
       const pinataMetadata: PinataMetadata = {
         name: formData.name,
         symbol: formData.symbol,
@@ -170,21 +161,13 @@ export const CreateCollection: FC = () => {
         }
       };
 
-      console.log("Uploading metadata to IPFS...");
       const metadataUrl = await uploadNFTMetadata(pinataMetadata);
-      console.log("Metadata uploaded:", metadataUrl);
-
-      // Initialize Collection Mint
-      console.log("Initializing Collection Mint...");
       const collectionMint = Keypair.generate();
-      console.log("Collection Mint pubkey:", collectionMint.publicKey.toString());
-
       const [mintAuthority] = PublicKey.findProgramAddressSync(
         [Buffer.from("authority")],
         program.programId
       );
 
-      // Get all PDAs first
       const metadataPDA = await getMetadata(collectionMint.publicKey);
       const masterEdition = await getMasterEdition(collectionMint.publicKey);
       const destination = await getAssociatedTokenAddress(
@@ -192,16 +175,12 @@ export const CreateCollection: FC = () => {
         publicKey
       );
 
-      // Create Collection Transaction
       const createCollectionTx = new Transaction();
-      
-      // Add compute budget instruction first
       const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
         units: 300_000
       });
       createCollectionTx.add(modifyComputeUnits);
 
-      // Add create collection instruction
       const createCollectionIx = await program.methods
         .createCollection({
           name: formData.name,
@@ -231,19 +210,13 @@ export const CreateCollection: FC = () => {
 
       createCollectionTx.add(createCollectionIx);
 
-      // Get latest blockhash
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       createCollectionTx.recentBlockhash = latestBlockhash.blockhash;
       createCollectionTx.feePayer = publicKey;
 
       try {
-        // Sign with collection mint keypair
         createCollectionTx.partialSign(collectionMint);
-        
-        // Sign with wallet
         const signedTx = await signTransaction(createCollectionTx);
-
-        // Send and confirm transaction
         const signature = await connection.sendRawTransaction(signedTx.serialize());
         await connection.confirmTransaction({
           signature,
@@ -251,9 +224,6 @@ export const CreateCollection: FC = () => {
           lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
         });
 
-        console.log("Collection created successfully:", signature);
-        
-        // Set collection mint address
         setCollectionMintAddress(collectionMint.publicKey.toString());
         
         notify({ 
@@ -282,30 +252,31 @@ export const CreateCollection: FC = () => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 w-full z-50">
-        <NotificationList />
-      </div>
+     <div className="fixed top-0 left-0 w-full" style={{ zIndex: 1000 }}>
+      <MarketplaceAppBar />
+  
+</div>
 
       {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
-            <div className="mt-4 text-white font-medium">Creating Collection...</div>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md" style={{ zIndex: 900 }}>
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+      <div className="mt-4 text-white font-medium">Creating Collection...</div>
+    </div>
+  </div>
+)}
 
       {!collectionMintAddress ? (
-        <div className="max-w-lg mx-auto bg-gray-800/50 rounded-lg p-6">
-          <form onSubmit={handleCreateCollection} className="space-y-4">
-            {/* Name Input */}
+       <div className="max-w-2xl mx-auto bg-gray-800/50 rounded-lg p-8 mt-10 shadow-lg relative" style={{ zIndex: 1 }}>
+          <form onSubmit={handleCreateCollection} className="space-y-6">
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">Create New Collection</h2>
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Collection Name
               </label>
               <input
                 type="text"
-                className={`w-full px-3 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                className={`w-full px-4 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                   errors.name ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="Enter collection name"
@@ -319,14 +290,13 @@ export const CreateCollection: FC = () => {
               )}
             </div>
 
-            {/* Symbol Input */}
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Symbol
               </label>
               <input
                 type="text"
-                className={`w-full px-3 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                className={`w-full px-4 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                   errors.symbol ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="Enter symbol"
@@ -340,13 +310,13 @@ export const CreateCollection: FC = () => {
               )}
             </div>
 
-            {/* Description Input */}
             <div>
+              
               <label className="block text-sm font-medium text-white mb-2">
                 Description
               </label>
               <textarea
-                className={`w-full px-3 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                className={`w-full px-4 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                   errors.description ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="Enter collection description"
@@ -361,7 +331,6 @@ export const CreateCollection: FC = () => {
               )}
             </div>
 
-            {/* Image Input */}
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Collection Image
@@ -371,7 +340,7 @@ export const CreateCollection: FC = () => {
                 accept="image/*"
                 name="image"
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                className={`w-full px-4 py-2 bg-gray-700 border rounded-md text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                   errors.image ? 'border-red-500' : 'border-gray-600'
                 }`}
                 disabled={loading}
@@ -390,19 +359,18 @@ export const CreateCollection: FC = () => {
               )}
             </div>
 
-            {/* Seller Fee Input */}
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 Seller Fee (%)
               </label>
               <input
                 type="number"
-                className={`w-full px-3 py-2 bg-gray-700 border rounded-md text-white 
+                className={`w-full px-4 py-2 bg-gray-700 border rounded-md text-white 
                   focus:outline-none focus:ring-2 focus:ring-purple-500 
                   ${errors.sellerFeeBasisPoints ? 'border-red-500' : 'border-gray-600'}`}
                 placeholder="Enter seller fee percentage (0-100)"
                 name="sellerFeeBasisPoints"
-                value={formData.sellerFeeBasisPoints / 100} // Chuyển basis points về %
+                value={formData.sellerFeeBasisPoints / 100}
                 onChange={handleInputChange}
                 disabled={loading}
                 min="0"
@@ -417,16 +385,16 @@ export const CreateCollection: FC = () => {
               </p>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2 px-4 rounded-md text-white font-medium
+              className={`w-full py-3 px-4 rounded-md text-white font-medium
                 ${loading 
                   ? 'bg-purple-500/50 cursor-not-allowed' 
                   : 'bg-purple-500 hover:bg-purple-600'
                 } transition-colors duration-300 flex items-center justify-center`}
             >
+              <NotificationList />
               {loading ? (
                 <>
                   <svg
@@ -458,8 +426,8 @@ export const CreateCollection: FC = () => {
           </form>
         </div>
       ) : (
-        // Hiển thị thông tin collection sau khi tạo thành công
-        <div className="max-w-2xl mx-auto bg-gray-800/50 rounded-lg p-8">
+        <div className="max-w-2xl mx-auto bg-gray-800/50 rounded-lg p-8 mt-10 shadow-lg relative z-10">
+          <MarketplaceAppBar />
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <img 
