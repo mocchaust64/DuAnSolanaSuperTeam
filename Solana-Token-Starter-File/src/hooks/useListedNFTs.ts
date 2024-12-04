@@ -1,5 +1,5 @@
 // src/hooks/useListedNFTs.ts
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Program, AnchorProvider } from '@project-serum/anchor';
 import { AccountInfo, PublicKey, Connection } from '@solana/web3.js';
@@ -54,100 +54,100 @@ export const useListedNFTs = (sellerFilter?: PublicKey | null) => {
   const [loading, setLoading] = useState(true);
   const { connection } = useConnection();
 
-  useEffect(() => {
-    let mounted = true;
+  const fetchListings = useCallback
+  (async () => {
+    if (!connection) return;
 
-    const fetchListings = async () => {
-      if (!connection) return;
+    try {
+      setLoading(true);
+      console.log("Fetching listings for seller:", sellerFilter?.toString());
+      
+      const accounts = await connection.getProgramAccounts(PROGRAM_ID);
+      console.log("Found accounts:", accounts.length);
 
-      try {
-        setLoading(true);
-        console.log("Fetching listings for seller:", sellerFilter?.toString());
-        
-        const accounts = await connection.getProgramAccounts(PROGRAM_ID);
-        console.log("Found accounts:", accounts.length);
+      const decodedListings = accounts
+        .map(({ pubkey, account }) => {
+          try {
+            const decoded = decodeListingAccount(account);
+            if (!decoded) return null;
+            
+            console.log("Decoded listing:", {
+              pubkey: pubkey.toString(),
+              seller: decoded.seller.toString(),
+              isActive: decoded.isActive
+            });
+            
+            return { pubkey, account: decoded };
+          } catch (err) {
+            return null;
+          }
+        })
+        .filter((listing): listing is NonNullable<typeof listing> => {
+          if (!listing) return false;
+          if (sellerFilter) {
+            const isOwner = listing.account.seller.equals(sellerFilter);
+            console.log("Checking ownership:", {
+              listingSeller: listing.account.seller.toString(),
+              filterSeller: sellerFilter.toString(),
+              isOwner,
+              isActive: listing.account.isActive
+            });
+            return isOwner && listing.account.isActive;
+          }
+          return listing.account.isActive;
+        });
 
-        const decodedListings = accounts
-          .map(({ pubkey, account }) => {
-            try {
-              const decoded = decodeListingAccount(account);
-              if (!decoded) return null;
-              
-              console.log("Decoded listing:", {
-                pubkey: pubkey.toString(),
-                seller: decoded.seller.toString(),
-                isActive: decoded.isActive
-              });
-              
-              return { pubkey, account: decoded };
-            } catch (err) {
-              return null;
-            }
-          })
-          .filter((listing): listing is NonNullable<typeof listing> => {
-            if (!listing) return false;
-            if (sellerFilter) {
-              const isOwner = listing.account.seller.equals(sellerFilter);
-              console.log("Checking ownership:", {
-                listingSeller: listing.account.seller.toString(),
-                filterSeller: sellerFilter.toString(),
-                isOwner,
-                isActive: listing.account.isActive
-              });
-              return isOwner && listing.account.isActive;
-            }
-            return listing.account.isActive;
-          });
+      console.log("Filtered listings:", decodedListings.length);
 
-        console.log("Filtered listings:", decodedListings.length);
+      const processedListings = await Promise.all(
+        decodedListings.map(async (listing) => {
+          try {
+            const [metadataPDA] = PublicKey.findProgramAddressSync(
+              [
+                Buffer.from('metadata'),
+                TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                listing.account.nftMint.toBuffer()
+              ],
+              TOKEN_METADATA_PROGRAM_ID
+            );
 
-        const processedListings = await Promise.all(
-          decodedListings.map(async (listing) => {
-            try {
-              const [metadataPDA] = PublicKey.findProgramAddressSync(
-                [
-                  Buffer.from('metadata'),
-                  TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-                  listing.account.nftMint.toBuffer()
-                ],
-                TOKEN_METADATA_PROGRAM_ID
-              );
+            const metadata = await fetchMetadata(connection, metadataPDA);
+            if (!metadata) return null;
 
-              const metadata = await fetchMetadata(connection, metadataPDA);
-              if (!metadata) return null;
+            return {
+              mint: listing.account.nftMint,
+              price: listing.account.price,
+              seller: listing.account.seller,
+              tokenAccount: listing.account.tokenAccount,
+              metadata
+            };
+          } catch (err) {
+            console.error('Error processing metadata:', err);
+            return null;
+          }
+        })
+      );
 
-              return {
-                mint: listing.account.nftMint,
-                price: listing.account.price,
-                seller: listing.account.seller,
-                tokenAccount: listing.account.tokenAccount,
-                metadata
-              };
-            } catch (err) {
-              console.error('Error processing metadata:', err);
-              return null;
-            }
-          })
-        );
-
-        if (mounted) {
-          const validListings = processedListings.filter(Boolean);
-          console.log("Final processed listings:", validListings.length);
-          setListings(validListings);
-        }
-      } catch (err) {
-        console.error("Error fetching listings:", err);
-        if (mounted) setListings([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    fetchListings();
-    return () => { mounted = false; };
+      const validListings = processedListings.filter(Boolean);
+      console.log("Final processed listings:", validListings.length);
+      setListings(validListings);
+    } catch (err) {
+      console.error("Error fetching listings:", err);
+      setListings([]);
+    } finally {
+      setLoading(false);
+    }
   }, [connection, sellerFilter]);
 
-  return { listings, loading };
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  return { 
+    listings, 
+    loading,
+    refresh: fetchListings // Thêm hàm refresh vào return object
+  };
 };
 
 const decodeListingAccount = (account: AccountInfo<Buffer>) => {

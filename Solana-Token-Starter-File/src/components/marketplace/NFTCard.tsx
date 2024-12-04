@@ -1,85 +1,53 @@
 // src/components/marketplace/NFTCard.tsx
-import { FC, useState } from 'react';
-import Image from 'next/image';
+import { FC } from 'react';
+import { NFT } from '@/types/nft';
 
 interface NFTCardProps {
-  id: string;
-  name: string;
-  symbol: string;
-  image: string;
-  description?: string;
-  attributes?: Array<{trait_type: string; value: string}>;
-  creator: string;
-  isListed: boolean;
-  price?: number;
+  nft: NFT;
+  onSelect: (nft: NFT) => void;
+  placeholderImage: string;
 }
 
-export const NFTCard: FC<NFTCardProps> = ({
-  id,
-  name,
-  symbol,
-  image,
-  description,
-  attributes,
-  creator,
-  isListed,
-  price
-}) => {
-  const [showDetails, setShowDetails] = useState(false);
-
+export const NFTCard: FC<NFTCardProps> = ({ nft, onSelect, placeholderImage }) => {
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-      {/* Ảnh NFT */}
-      <div className="relative aspect-square">
-        <Image
-          src={image}
-          alt={name}
-          layout="fill"
-          objectFit="cover"
-          className="transition-transform hover:scale-105"
+    <div className="bg-gray-800/50 rounded-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+      <div 
+        className="relative group cursor-pointer"
+        onClick={() => onSelect(nft)}
+      >
+        <img 
+          src={nft.image || placeholderImage} 
+          alt={nft.name} 
+          className="w-full h-64 object-cover"
         />
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
+          <p className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            View Details
+          </p>
+        </div>
       </div>
-
-      {/* Thông tin cơ bản */}
       <div className="p-4">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg font-semibold text-white">{symbol}</h3>
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="px-3 py-1 bg-purple-500 hover:bg-purple-600 rounded text-white text-sm transition-colors"
+        <h3 className="text-lg font-semibold text-white mb-2">{nft.name}</h3>
+        <div className="flex flex-col gap-2">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log(`List NFT ${nft.mint}`);
+            }}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
           >
-            {showDetails ? 'Hide Details' : 'View Details'}
+            List for Sale
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log(`Update metadata ${nft.mint}`);
+            }}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            Update Metadata
           </button>
         </div>
-
-        {/* Chi tiết NFT - chỉ hiện khi click */}
-        {showDetails && (
-          <div className="mt-4 space-y-2 text-gray-300">
-            <p><span className="font-semibold">Name:</span> {name}</p>
-            <p><span className="font-semibold">Description:</span> {description}</p>
-            <p><span className="font-semibold">Creator:</span> {creator}</p>
-            
-            {attributes && attributes.length > 0 && (
-              <div>
-                <p className="font-semibold mb-1">Attributes:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {attributes.map((attr, index) => (
-                    <div key={index} className="bg-gray-700 p-2 rounded">
-                      <p className="text-sm font-medium">{attr.trait_type}</p>
-                      <p className="text-sm">{attr.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {isListed && price && (
-              <p>
-                <span className="font-semibold">Price:</span> {price} SOL
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

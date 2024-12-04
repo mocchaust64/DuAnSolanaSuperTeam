@@ -36,7 +36,7 @@ export type MarketplaceConfig = {
   bump: number;
 };
 
-export const IDL: Idl = {
+export const IDL = {
   version: "0.1.0",
   name: "nft_marketplace",
   instructions: [
@@ -78,6 +78,21 @@ export const IDL: Idl = {
         { name: "price", type: "u64" },
         { name: "duration", type: "i64" }
       ]
+    },
+    {
+      name: "delistNft",
+      accounts: [
+        { name: "owner", isMut: true, isSigner: true },
+        { name: "listingAccount", isMut: true, isSigner: false },
+        { name: "nftMint", isMut: false, isSigner: false },
+        { name: "ownerTokenAccount", isMut: true, isSigner: false },
+        { name: "escrowTokenAccount", isMut: true, isSigner: false },
+        { name: "tokenProgram", isMut: false, isSigner: false },
+        { name: "associatedTokenProgram", isMut: false, isSigner: false },
+        { name: "systemProgram", isMut: false, isSigner: false },
+        { name: "rent", isMut: false, isSigner: false }
+      ],
+      args: []
     }
   ],
   accounts: [
@@ -122,11 +137,37 @@ export const IDL: Idl = {
       code: 6001,
       name: "InvalidPrice",
       msg: "Giá phải lớn hơn 0"
+    },
+    {
+      code: 6002,
+      name: "InvalidOwner",
+      msg: "Bạn không sở hữu NFT này"
+    },
+    {
+      code: 6003,
+      name: "InvalidSeller",
+      msg: "Bạn không phải người bán NFT này"
+    },
+    {
+      code: 6005,
+      name: "ListingNotActive",
+      msg: "NFT listing không còn active"
+    },
+    {
+      code: 6009,
+      name: "InvalidEscrowAccount",
+      msg: "Invalid escrow token account"
     }
   ]
-};
+} as const;
 
-// Thêm các instruction khác từ JSON IDL
+export type NftMarketplace = {
+  version: "0.1.0";
+  name: "nft_marketplace";
+  instructions: typeof IDL.instructions;
+  accounts: typeof IDL.accounts;
+  errors: typeof IDL.errors;
+};
 
 export const PROGRAM_ID = new PublicKey("CFSd2NBvuNZY16M3jcYZufyZbhdok4esET8N2kyEdVrs");
 export const MARKETPLACE_ADDRESS = new PublicKey("458FRZxoazBH6GVZFMDebd9oZi3NSVGwSAXf2iS3Mfw6");

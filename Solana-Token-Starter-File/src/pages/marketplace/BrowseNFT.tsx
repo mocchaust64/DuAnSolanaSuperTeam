@@ -3,6 +3,9 @@ import { FC, useState } from 'react';
 import { useListedNFTs } from '../../hooks/useListedNFTs';
 import { PulseLoader } from 'react-spinners';
 import Image from 'next/image';
+import { BuyNFTModal } from '../../components/marketplace/BuyNFTModal';
+import { NFT, ListedNFT, NFTListing } from '../../types/nft';
+import { PublicKey } from '@solana/web3.js';
 
 const PINATA_GATEWAY = "https://gateway.pinata.cloud/ipfs/";
 const PLACEHOLDER_IMAGE = "/assets/images/logo11.png"; // Updated path
@@ -25,6 +28,7 @@ export const BrowseNFT: FC = () => {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('latest');
+  const [selectedNFT, setSelectedNFT] = useState<ListedNFT | null>(null);
   const { listings, loading } = useListedNFTs();
 
   const sortedListings = [...listings].sort((a, b) => {
@@ -36,6 +40,51 @@ export const BrowseNFT: FC = () => {
   const filteredListings = sortedListings.filter(nft => 
     nft.metadata.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const convertToListedNFT = (nft: any): ListedNFT => {
+    if (!nft.price || !nft.seller) {
+      throw new Error('Invalid NFT listing data');
+    }
+
+    const TREASURY_WALLET = "8kjmpRqSCGHHvcD9DabFjZqsNWKLR86Rfaxwui3z7APi";
+
+    return {
+      mint: nft.mint.toString(),
+      name: nft.metadata.name,
+      symbol: nft.metadata.symbol || '',
+      image: nft.metadata.image || PLACEHOLDER_IMAGE,
+      description: nft.metadata.description || '',
+      price: Number(nft.price),
+      seller: nft.seller.toString(),
+      treasuryWallet: TREASURY_WALLET,
+      isListed: true,
+      creators: nft.metadata.creators?.map((creator: any) => ({
+        address: creator.address,
+        verified: creator.verified || false,
+        share: creator.share
+      })) || [{
+        address: nft.seller.toString(),
+        verified: false,
+        share: 100
+      }],
+      metadata: {
+        name: nft.metadata.name,
+        symbol: nft.metadata.symbol || '',
+        description: nft.metadata.description || '',
+        image: nft.metadata.image || PLACEHOLDER_IMAGE,
+        attributes: nft.metadata.attributes || []
+      }
+    };
+  };
+
+  const handleBuyClick = (listing: any) => {
+    const nft = convertToListedNFT(listing);
+    setSelectedNFT(nft);
+  };
+
+  const handleBuySuccess = () => {
+    window.location.reload();
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -87,7 +136,7 @@ export const BrowseNFT: FC = () => {
                   <p className="text-purple-500 font-bold">{nft.price} SOL</p>
                   <button 
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-                    onClick={() => {/* Implement buy */}}
+                    onClick={() => handleBuyClick(nft)}
                   >
                     Buy Now
                   </button>
@@ -96,6 +145,14 @@ export const BrowseNFT: FC = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {selectedNFT && (
+        <BuyNFTModal
+          nft={selectedNFT}
+          onClose={() => setSelectedNFT(null)}
+          onSuccess={handleBuySuccess}
+        />
       )}
     </div>
   );

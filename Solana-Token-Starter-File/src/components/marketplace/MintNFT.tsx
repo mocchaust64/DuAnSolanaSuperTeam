@@ -837,25 +837,28 @@ export const MintNFT: FC = () => {
 
   // Chỉ thay đổi phần return
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <h2 className="text-3xl font-bold text-white">Mint NFT</h2>
+    <div className="max-w-6xl mx-auto p-8">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-white">Mint NFT</h2>
+        <p className="text-gray-400 mt-2">Create your unique NFT and add it to your collection</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Form Section */}
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Form Section - Left Column */}
+        <div className="bg-gray-800 rounded-xl p-8 space-y-8">
           {/* Collection Selection */}
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              Select Collection
+          <div className="space-y-4">
+            <label className="block text-lg font-semibold text-white">
+              Collection Details
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <select
-                className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                className="flex-1 px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
                 value={selectedCollection || ''}
                 onChange={(e) => setSelectedCollection(e.target.value)}
                 disabled={isLoadingCollections}
               >
-                <option value="">Choose a collection</option>
+                <option value="">Select a collection</option>
                 {collections.map((collection) => (
                   <option key={collection.mint} value={collection.mint}>
                     {collection.name} ({collection.symbol})
@@ -863,169 +866,155 @@ export const MintNFT: FC = () => {
                 ))}
               </select>
               <button 
-                onClick={() => {
-                  console.log("Refreshing collections...");
-                  // Reset state và gọi fetchCollections
-                  setHasLoadedCollections(false);
-                  localStorage.removeItem('nft_collections_loaded');
-                  fetchCollections();
-                }}
+                onClick={fetchCollections}
                 disabled={isLoadingCollections}
-                className={`px-4 py-2 rounded-md font-semibold flex items-center gap-2 ${
+                className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors ${
                   isLoadingCollections 
                     ? 'bg-gray-600 cursor-not-allowed' 
-                    : 'bg-purple-600 hover:bg-purple-700'
+                    : 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
                 }`}
               >
                 {isLoadingCollections ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" {...spinnerProps} />
-                    <span>Loading...</span>
-                  </>
+                  <svg className="animate-spin h-5 w-5" {...spinnerProps} />
                 ) : (
-                  <>
-                    <svg className="h-5 w-5" {...refreshIconProps} />
-                    <span>Refresh</span>
-                  </>
+                  <svg className="h-5 w-5" {...refreshIconProps} />
                 )}
               </button>
             </div>
           </div>
 
           {/* NFT Details */}
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              NFT Name
+          <div className="space-y-6">
+            <label className="block text-lg font-semibold text-white">
+              NFT Details
             </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-              placeholder="Enter NFT name"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-            )}
+            
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
+                  placeholder="NFT Name"
+                />
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-400">{errors.name}</p>
+                )}
+              </div>
+
+              <input
+                type="text"
+                value={formData.symbol}
+                onChange={(e) => setFormData({...formData, symbol: e.target.value})}
+                className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
+                placeholder="Symbol"
+              />
+
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors"
+                rows={4}
+                placeholder="Description"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              Symbol
+          {/* Image Upload */}
+          <div className="space-y-4">
+            <label className="block text-lg font-semibold text-white">
+              NFT Image
             </label>
-            <input
-              type="text"
-              value={formData.symbol}
-              onChange={(e) => setFormData({...formData, symbol: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-              placeholder="Enter symbol"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-              rows={3}
-              placeholder="Enter description"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              Image
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  try {
-                    // Hiển thị preview ngay lập tức
-                    setFormData({...formData, image: file});
-                    setPreview({
-                      ...preview,
-                      image: URL.createObjectURL(file)
-                    });
-                    
-                    // Upload file
-                    await handleImageUpload(file);
-                  } catch (error) {
-                    // Reset form nếu upload thất bại
-                    setFormData({...formData, image: null});
-                    setPreview({...preview, image: ''});
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      setFormData({...formData, image: file});
+                      setPreview({
+                        ...preview,
+                        image: URL.createObjectURL(file)
+                      });
+                      await handleImageUpload(file);
+                    } catch (error) {
+                      setFormData({...formData, image: null});
+                      setPreview({...preview, image: ''});
+                    }
                   }
-                }
-              }}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-            />
+                }}
+                className="w-full px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white focus:border-purple-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+              />
+            </div>
           </div>
 
           {/* Mint Button */}
           <button
             onClick={handleMint}
             disabled={uploading || !selectedCollection || !formData.name || !isImageUploaded}
-            className={`w-full px-4 py-2 rounded-md font-semibold ${
+            className={`w-full px-6 py-4 rounded-lg text-lg font-semibold transition-colors ${
               uploading || !selectedCollection || !formData.name || !isImageUploaded
                 ? 'bg-gray-600 cursor-not-allowed'
-                : 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
             }`}
           >
-            {uploading ? 'Minting...' : 'Mint NFT'}
+            {uploading ? (
+              <div className="flex items-center justify-center gap-3">
+                <svg className="animate-spin h-5 w-5" {...spinnerProps} />
+                <span>Minting...</span>
+              </div>
+            ) : (
+              'Mint NFT'
+            )}
           </button>
         </div>
 
-        {/* Preview Section */}
-        <div className="space-y-6">
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h3 className="text-xl font-semibold text-white mb-4">Preview</h3>
+        {/* Preview Section - Right Column */}
+        <div className="space-y-8">
+          {/* Preview Card */}
+          <div className="bg-gray-800 rounded-xl p-8">
+            <h3 className="text-xl font-semibold text-white mb-6">Preview</h3>
             
-            {preview.image && (
-              <img
-                src={preview.image}
-                alt="NFT Preview"
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
-            )}
-
-            <div className="space-y-2">
-              <p className="text-white">
-                <span className="font-medium">Name:</span> {preview.name || formData.name}
-              </p>
-              <p className="text-white">
-                <span className="font-medium">Symbol:</span> {preview.symbol || formData.symbol}
-              </p>
-              <p className="text-white">
-                <span className="font-medium">Description:</span> {preview.description || formData.description}
-              </p>
-              {mintedNFT && (
-                <>
-                  <p className="text-white">
-                    <span className="font-medium">Mint Address:</span> {mintedNFT.mint}
-                  </p>
-                  {mintedNFT.collection && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">Collection:</span>
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        mintedNFT.collection.verified 
-                          ? 'bg-green-600' 
-                          : 'bg-yellow-600'
-                      }`}>
-                        {mintedNFT.collection.verified ? 'Verified' : 'Unverified'}
-                      </span>
-                    </div>
-                  )}
-                </>
+            <div className="space-y-6">
+              {preview.image && (
+                <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-900">
+                  <img
+                    src={preview.image}
+                    alt="NFT Preview"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               )}
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-2 border-b border-gray-700">
+                  <span className="text-gray-400">Name</span>
+                  <span className="text-white font-medium">
+                    {preview.name || formData.name || 'Not set'}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center py-2 border-b border-gray-700">
+                  <span className="text-gray-400">Symbol</span>
+                  <span className="text-white font-medium">
+                    {preview.symbol || formData.symbol || 'Not set'}
+                  </span>
+                </div>
+                
+                <div className="py-2 border-b border-gray-700">
+                  <span className="text-gray-400 block mb-2">Description</span>
+                  <p className="text-white">
+                    {preview.description || formData.description || 'No description'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Pass mintedNFT as prop */}
+          {/* Minted NFT Info */}
           <MintedNFTInfo mintedNFT={mintedNFT} />
         </div>
       </div>
