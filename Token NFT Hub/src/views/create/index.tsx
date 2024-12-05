@@ -35,8 +35,8 @@ import { BN } from "@project-serum/anchor";
 import { TokenData } from '../../utils/token';
 
 // Environment variables
-const PINATA_API_KEY = "bb931179bd2f614252de";
-const PINATA_SECRET_KEY = "212e21d04c9998b7e21a4b74f0aac994ceefad203901e9e3c879aaa6c43269cc";
+const PINATA_API_KEY = "26b854a620d0fcea40dc";
+const PINATA_SECRET_KEY = "98e0ace559d6812c074dcf9861a03dec48ab8a9046e3339967c2e0dd31df0d05";
 
 
 interface CreateViewProps {

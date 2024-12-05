@@ -140,7 +140,7 @@ message: "Không thể thực hiện",
         { royaltyPercentage: metadata?.data?.sellerFeeBasisPoints || 0 }, 
         data, 
         8
-      );
+      );  
 
       // Tính toán phí và tổng số tiền
       const listingPrice = nft.price;
