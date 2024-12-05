@@ -17,7 +17,7 @@ import { delistNFT } from './delistNFT';
 import { BN } from 'bn.js';
 import { PROGRAM_ID } from '../../utils/Constants';
 import { AnchorProvider, Program } from '@project-serum/anchor';
-import { IDL } from '@/idl/nft_marketplace'; // Đảm bảo import IDL
+
 import { DelistNFTModal } from '@/components/modals/DelistNFTModal';
 
 interface NFTAttribute {
@@ -75,7 +75,7 @@ const listNFT = async (
   try {
     // Tạo listing PDA
     const [listingPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('listing'), new PublicKey(nftMint).toBuffer()],
+      [Buffer.from('listing_v2'), new PublicKey(nftMint).toBuffer()],
       PROGRAM_ID
     );
 
@@ -696,7 +696,7 @@ const MyNFTs: FC = () => {
         
         // Tạo PDA cho listing account
         const [listingPDA] = PublicKey.findProgramAddressSync(
-          [Buffer.from("listing"), nftMintPubkey.toBuffer()],
+          [Buffer.from("listing_v2"), nftMintPubkey.toBuffer()],
           program.programId
         );
 
@@ -715,7 +715,7 @@ const MyNFTs: FC = () => {
 
         // Lấy marketplace config PDA
         const [marketplaceConfig] = PublicKey.findProgramAddressSync(
-          [Buffer.from("marketplace")],
+          [Buffer.from("marketplace_v2")],
           program.programId
         );
 
@@ -845,7 +845,7 @@ const MyNFTs: FC = () => {
 
         // Tạo listing PDA
         const [listingPDA] = PublicKey.findProgramAddressSync(
-          [Buffer.from('listing'), new PublicKey(nft.mint).toBuffer()],
+          [Buffer.from('listing_v2'), new PublicKey(nft.mint).toBuffer()],
           program.programId
         );
 

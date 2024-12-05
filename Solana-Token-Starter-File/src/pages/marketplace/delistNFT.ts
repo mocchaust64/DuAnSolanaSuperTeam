@@ -1,17 +1,11 @@
-import { 
-  Connection, 
-  PublicKey, 
-  SystemProgram, 
-  SYSVAR_RENT_PUBKEY,
-  Transaction,
-  TransactionInstruction 
-} from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
-import { AnchorProvider } from '@project-serum/anchor';
+import { AnchorProvider } from "@project-serum/anchor";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Connection, SYSVAR_RENT_PUBKEY, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { notify } from '@/utils/notifications';
 
-// Discriminator cho instruction delistNft (từ IDL)
-const DELIST_NFT_DISCRIMINATOR = [91, 249, 165, 185, 22, 7, 119, 176];
+// Discriminator cho instruction delistNft từ IDL
+const DELIST_NFT_IX_DISCM = [91, 249, 165, 185, 22, 7, 119, 176];
 
 export const delistNFT = async (
   connection: Connection,
@@ -20,16 +14,19 @@ export const delistNFT = async (
   nftMint: PublicKey,
 ): Promise<string> => {
   try {
+    // Tìm listing PDA và bump
     const [listingPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('listing'), nftMint.toBuffer()],
+      [Buffer.from('listing_v2'), nftMint.toBuffer()],
       programId
     );
 
+    // Tìm owner token account
     const ownerTokenAccount = getAssociatedTokenAddressSync(
       nftMint,
       provider.wallet.publicKey
     );
 
+    // Tìm escrow token account
     const escrowTokenAccount = getAssociatedTokenAddressSync(
       nftMint,
       listingPDA,
@@ -40,12 +37,9 @@ export const delistNFT = async (
       mint: nftMint.toBase58(),
       listing: listingPDA.toBase58(),
       owner: provider.wallet.publicKey.toBase58(),
+      ownerToken: ownerTokenAccount.toBase58(),
       escrow: escrowTokenAccount.toBase58()
     });
-
-    const data = Buffer.from([
-      ...DELIST_NFT_DISCRIMINATOR,
-    ]);
 
     const delistInstruction = new TransactionInstruction({
       programId: programId,
@@ -60,27 +54,21 @@ export const delistNFT = async (
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
         { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
       ],
-      data: data,
+      data: Buffer.from(DELIST_NFT_IX_DISCM)
     });
 
     const transaction = new Transaction().add(delistInstruction);
-    const signature = await provider.sendAndConfirm(transaction);
-
-    notify({
-      type: 'success',
-      message: 'NFT delisted successfully!',
-      txid: signature
+    transaction.feePayer = provider.wallet.publicKey;
+    
+    const signature = await provider.sendAndConfirm(transaction, [], {
+      commitment: 'confirmed'
     });
 
     return signature;
 
   } catch (error) {
     console.error('Error delisting NFT:', error);
-    notify({
-      type: 'error',
-      message: 'Error Delisting NFT',
-      description: error instanceof Error ? error.message : 'Unknown error occurred'
-    });
     throw error;
   }
 };
+

@@ -49,52 +49,110 @@ const transformIPFSUrl = (url: string): string => {
   return url;
 };
 
+// Thêm hàm helper để chuyển đổi discriminator thành base58
+const LISTING_DISCRIMINATOR = [59, 89, 136, 25, 21, 196, 183, 13];
+const bs58 = require('bs58');
+
 export const useListedNFTs = (sellerFilter?: PublicKey | null) => {
   const [listings, setListings] = useState<ListedNFT[]>([]);
   const [loading, setLoading] = useState(true);
   const { connection } = useConnection();
 
-  const fetchListings = useCallback
-  (async () => {
+  const fetchListings = useCallback(async () => {
     if (!connection) return;
 
     try {
       setLoading(true);
       console.log("Fetching listings for seller:", sellerFilter?.toString());
       
-      const accounts = await connection.getProgramAccounts(PROGRAM_ID);
+      const accounts = await connection.getProgramAccounts(PROGRAM_ID, {
+        filters: [
+          {
+            memcmp: {
+              offset: 0,
+              bytes: bs58.encode(Buffer.from(LISTING_DISCRIMINATOR))
+            }
+          }
+        ]
+      });
       console.log("Found accounts:", accounts.length);
 
       const decodedListings = accounts
         .map(({ pubkey, account }) => {
           try {
-            const decoded = decodeListingAccount(account);
-            if (!decoded) return null;
-            
-            console.log("Decoded listing:", {
+            // Log raw account data
+            console.log("Processing account:", {
               pubkey: pubkey.toString(),
+              dataLength: account.data.length,
+              firstBytes: [...account.data.slice(0, 8)], // Log discriminator bytes
+            });
+
+            const decoded = decodeListingAccount(account);
+            if (!decoded) {
+              console.log("Failed to decode account:", pubkey.toString());
+              return null;
+            }
+
+            // Log decoded data
+            console.log("Successfully decoded listing:", {
+              pubkey: pubkey.toString(),
+              nftMint: decoded.nftMint.toString(),
               seller: decoded.seller.toString(),
+              price: decoded.price,
               isActive: decoded.isActive
             });
+
+            // Tính toán và kiểm tra PDA
+            const [expectedPDA] = PublicKey.findProgramAddressSync(
+              [Buffer.from("listing_v2"), decoded.nftMint.toBuffer()],
+              PROGRAM_ID
+            );
+
+            console.log("PDA verification:", {
+              actualPDA: pubkey.toString(),
+              expectedPDA: expectedPDA.toString(),
+              isMatch: pubkey.equals(expectedPDA),
+              nftMint: decoded.nftMint.toString()
+            });
+
+            // Nếu không phải v2 listing, bỏ qua
+            if (!pubkey.equals(expectedPDA)) {
+              console.log("Skipping non-v2 listing");
+              return null;
+            }
             
             return { pubkey, account: decoded };
           } catch (err) {
+            console.error("Error processing account:", err);
+            console.error("Error details:", {
+              pubkey: pubkey.toString(),
+              error: err.message
+            });
             return null;
           }
         })
         .filter((listing): listing is NonNullable<typeof listing> => {
-          if (!listing) return false;
+          if (!listing) {
+            return false;
+          }
+          
+          const isActive = listing.account.isActive;
+          console.log("Checking listing status:", {
+            pubkey: listing.pubkey.toString(),
+            isActive: isActive,
+            hasSellerFilter: !!sellerFilter
+          });
+
           if (sellerFilter) {
             const isOwner = listing.account.seller.equals(sellerFilter);
-            console.log("Checking ownership:", {
+            console.log("Checking seller:", {
               listingSeller: listing.account.seller.toString(),
               filterSeller: sellerFilter.toString(),
-              isOwner,
-              isActive: listing.account.isActive
+              isOwner
             });
-            return isOwner && listing.account.isActive;
+            return isOwner && isActive;
           }
-          return listing.account.isActive;
+          return isActive;
         });
 
       console.log("Filtered listings:", decodedListings.length);
